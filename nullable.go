@@ -73,7 +73,7 @@ func (t NullableAttr[T]) IsNull() bool {
 	return foundNull
 }
 
-// SetNull indicate that the field was sent, and had a value of `null`
+// SetNull sets the value to an explicit `null`
 func (t *NullableAttr[T]) SetNull() {
 	var empty T
 	*t = map[bool]T{false: empty}
@@ -84,7 +84,7 @@ func (t NullableAttr[T]) IsSpecified() bool {
 	return len(t) != 0
 }
 
-// SetUnspecified indicate whether the field was sent
+// SetUnspecified sets the value to be absent from the serialized payload
 func (t *NullableAttr[T]) SetUnspecified() {
 	*t = map[bool]T{}
 }
