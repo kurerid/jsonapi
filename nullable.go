@@ -2,14 +2,8 @@ package jsonapi
 
 import (
 	"errors"
-	"reflect"
 	"time"
 )
-
-var SupportedNullableTypes = map[string]reflect.Value{
-	"bool":      reflect.ValueOf(false),
-	"time.Time": reflect.ValueOf(time.Time{}),
-}
 
 // Nullable is a generic type, which implements a field that can be one of three states:
 //

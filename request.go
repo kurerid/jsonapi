@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -675,10 +674,10 @@ func handleNullable(
 		}
 	}
 
-	var rgx = regexp.MustCompile(`\[(.*)\]`)
-	rs := rgx.FindStringSubmatch(fieldValue.Type().Name())
+	innerType := fieldValue.Type().Elem()
+	zeroValue := reflect.Zero(innerType)
 
-	attrVal, err := unmarshalAttribute(attribute, args, structField, SupportedNullableTypes[rs[1]])
+	attrVal, err := unmarshalAttribute(attribute, args, structField, zeroValue)
 	if err != nil {
 		return reflect.ValueOf(nil), err
 	}
