@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,6 +26,8 @@ func (h *ExampleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		methodHandler = h.createBlog
+	case http.MethodPatch:
+		methodHandler = h.updateBlog
 	case http.MethodPut:
 		methodHandler = h.echoBlogs
 	case http.MethodGet:
@@ -50,6 +53,28 @@ func (h *ExampleHandler) createBlog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// ...do stuff with your blog...
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set(headerContentType, jsonapi.MediaType)
+
+	if err := jsonapiRuntime.MarshalPayload(w, blog); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (h *ExampleHandler) updateBlog(w http.ResponseWriter, r *http.Request) {
+	jsonapiRuntime := jsonapi.NewRuntime().Instrument("blogs.update")
+
+	blog := new(Blog)
+
+	if err := jsonapiRuntime.UnmarshalPayload(r.Body, blog); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println(blog)
 
 	// ...do stuff with your blog...
 

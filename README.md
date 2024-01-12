@@ -409,6 +409,72 @@ func (post Post) JSONAPIRelationshipMeta(relation string) *Meta {
 }
 ```
 
+### Nullable attributes
+
+Certain APIs may interpret the meaning of `null` attribute values as significantly
+different from unspecified values (those that do not show up in the request).
+The default use of the `omitempty` struct tag does not allow for sending
+significant `null`s.
+
+A type is provided for this purpose if needed: `NullableAttr[T]`. This type
+provides an API for sending and receiving significant `null` values for
+attribute values of any type.
+
+In the example below, a payload is presented for a fictitious API that makes use
+of significant `null` values. Once enabled, the `UnsettableTime` setting can
+only be disabled by updating it to a `null` value. 
+
+The payload struct below makes use of a `NullableAttr` with an inner `time.Time`
+to allow this behavior:
+
+```go
+type Settings struct {
+	ID             int                              `jsonapi:"primary,videos"`
+	UnsettableTime jsonapi.NullableAttr[time.Time]  `jsonapi:"attr,unsettable_time,rfc3339,omitempty"`
+}
+```
+
+To enable the setting as described above, an non-null `time.Time` value is
+sent to the API.  This is done by using the exported
+`NewNullableAttrWithValue[T]()` method:
+
+```go
+s := Settings{
+    ID: 1,
+    UnsettableTime: jsonapi.NewNullableAttrWithValue[time.Time](time.Now()),
+}
+```
+
+To disable the setting, a `null` value needs to be sent to the API. This is done
+by using the exported `NewNullNullableAttr[T]()` method:
+
+```go
+s := Settings{
+    ID: 1,
+    UnsettableTime: jsonapi.NewNullNullableAttr[time.Time](),
+}
+```
+
+Once a payload has been marshaled, the attribute value is flattened to a
+primitive value:
+```
+    "unsettable_time": "2021-01-01T02:07:14Z",
+```
+
+Significant nulls are also included and flattened, even when specifying `omitempty`:
+```
+    "unsettable_time": null,
+```
+
+Once a payload is unmarshaled, the target attribute field is hydrated with
+the value in the payload and can be retrieved with the `Get()` method:
+```go
+t, err := s.UnsettableTime.Get()
+```
+
+All other struct tags used in the attribute definition will be honored when
+marshaling and unmarshaling non-null values for the inner type.
+
 ### Custom types
 
 Custom types are supported for primitive types, only, as attributes.  Examples,

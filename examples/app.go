@@ -96,6 +96,28 @@ func exerciseHandler() {
 	fmt.Println(buf.String())
 	fmt.Println("============== end raw jsonapi response =============")
 
+	// update
+	blog.UnsettableTime = jsonapi.NewNullableAttrWithValue[time.Time](time.Now())
+	in = bytes.NewBuffer(nil)
+	jsonapi.MarshalOnePayloadEmbedded(in, blog)
+
+	req, _ = http.NewRequest(http.MethodPatch, "/blogs", in)
+
+	req.Header.Set(headerAccept, jsonapi.MediaType)
+
+	w = httptest.NewRecorder()
+
+	fmt.Println("============ start update ===========")
+	http.DefaultServeMux.ServeHTTP(w, req)
+	fmt.Println("============ stop update ===========")
+
+	buf = bytes.NewBuffer(nil)
+	io.Copy(buf, w.Body)
+
+	fmt.Println("============ jsonapi response from update ===========")
+	fmt.Println(buf.String())
+	fmt.Println("============== end raw jsonapi response =============")
+
 	// echo
 	blogs := []interface{}{
 		fixtureBlogCreate(1),
