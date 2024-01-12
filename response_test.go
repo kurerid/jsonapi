@@ -820,17 +820,17 @@ func TestMarshal_Times(t *testing.T) {
 	}
 }
 
-func TestCustomMarshal_Time(t *testing.T) {
+func TestNullableAttr_Time(t *testing.T) {
 	aTime := time.Date(2016, 8, 17, 8, 27, 12, 23849, time.UTC)
 
 	for _, tc := range []struct {
 		desc         string
-		input        *WithNullables
+		input        *WithNullableAttrs
 		verification func(data map[string]interface{}) error
 	}{
 		{
-			desc: "time_nil",
-			input: &WithNullables{
+			desc: "time_unspecified",
+			input: &WithNullableAttrs{
 				ID:          5,
 				RFC3339Time: nil,
 			},
@@ -843,8 +843,22 @@ func TestCustomMarshal_Time(t *testing.T) {
 			},
 		},
 		{
-			desc: "time_value_rfc3339",
-			input: &WithNullables{
+			desc: "time_null",
+			input: &WithNullableAttrs{
+				ID:          5,
+				RFC3339Time: NullTime(),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "time_not_null_rfc3339",
+			input: &WithNullableAttrs{
 				ID:          5,
 				RFC3339Time: NullableTime(aTime),
 			},
@@ -857,8 +871,8 @@ func TestCustomMarshal_Time(t *testing.T) {
 			},
 		},
 		{
-			desc: "time_value_iso8601",
-			input: &WithNullables{
+			desc: "time_not_null_iso8601",
+			input: &WithNullableAttrs{
 				ID:          5,
 				ISO8601Time: NullableTime(aTime),
 			},
@@ -871,14 +885,14 @@ func TestCustomMarshal_Time(t *testing.T) {
 			},
 		},
 		{
-			desc: "time_null_integer",
-			input: &WithNullables{
+			desc: "time_not_null_int",
+			input: &WithNullableAttrs{
 				ID:      5,
-				IntTime: NullTime(),
+				IntTime: NullableTime(aTime),
 			},
 			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["int_time"]
-				if got, want := v, (interface{})(nil); got != want {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["int_time"].(float64)
+				if got, want := int64(v), aTime.Unix(); got != want {
 					return fmt.Errorf("got %v, want %v", got, want)
 				}
 				return nil
@@ -901,17 +915,17 @@ func TestCustomMarshal_Time(t *testing.T) {
 	}
 }
 
-func TestCustomMarshal_Bool(t *testing.T) {
+func TestNullableAttr_Bool(t *testing.T) {
 	aBool := true
 
 	for _, tc := range []struct {
 		desc         string
-		input        *WithNullables
+		input        *WithNullableAttrs
 		verification func(data map[string]interface{}) error
 	}{
 		{
-			desc: "bool_nil",
-			input: &WithNullables{
+			desc: "bool_unspecified",
+			input: &WithNullableAttrs{
 				ID:   5,
 				Bool: nil,
 			},
@@ -924,8 +938,22 @@ func TestCustomMarshal_Bool(t *testing.T) {
 			},
 		},
 		{
-			desc: "unsetable_value_present",
-			input: &WithNullables{
+			desc: "bool_null",
+			input: &WithNullableAttrs{
+				ID:   5,
+				Bool: NullBool(),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "bool_not_null",
+			input: &WithNullableAttrs{
 				ID:   5,
 				Bool: NullableBool(aBool),
 			},
@@ -937,20 +965,7 @@ func TestCustomMarshal_Bool(t *testing.T) {
 				return nil
 			},
 		},
-		{
-			desc: "unsetable_nil_value",
-			input: &WithNullables{
-				ID:   5,
-				Bool: NullBool(),
-			},
-			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
-				if got, want := v, (interface{})(nil); got != want {
-					return fmt.Errorf("got %v, want %v", got, want)
-				}
-				return nil
-			},
-		}} {
+	} {
 		t.Run(tc.desc, func(t *testing.T) {
 			out := bytes.NewBuffer(nil)
 			if err := MarshalPayload(out, tc.input); err != nil {

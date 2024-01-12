@@ -589,8 +589,8 @@ func unmarshalAttribute(
 	value = reflect.ValueOf(attribute)
 	fieldType := structField.Type
 
-	// Handle Nullable[T]
-	if strings.HasPrefix(fieldValue.Type().Name(), "Nullable[") {
+	// Handle NullableAttr[T]
+	if strings.HasPrefix(fieldValue.Type().Name(), "NullableAttr[") {
 		value, err = handleNullable(attribute, args, structField, fieldValue)
 		return
 	}
@@ -746,7 +746,7 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 		return reflect.ValueOf(time.Now()), ErrInvalidTime
 	}
 
-	t := time.Unix(at, 0).UTC()
+	t := time.Unix(at, 0)
 
 	return reflect.ValueOf(t), nil
 }

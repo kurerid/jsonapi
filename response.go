@@ -332,7 +332,7 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 			}
 
 			// Handle Nullable[T]
-			if strings.HasPrefix(fieldValue.Type().Name(), "Nullable[") {
+			if strings.HasPrefix(fieldValue.Type().Name(), "NullableAttr[") {
 				// handle unspecified
 				if fieldValue.IsNil() {
 					continue

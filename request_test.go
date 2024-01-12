@@ -303,7 +303,7 @@ func TestStringPointerField(t *testing.T) {
 func TestUnmarshalNullableTime(t *testing.T) {
 	aTime := time.Date(2016, 8, 17, 8, 27, 12, 23849, time.UTC)
 
-	out := new(WithNullables)
+	out := new(WithNullableAttrs)
 
 	attrs := map[string]interface{}{
 		"name":         "Name",
@@ -312,7 +312,7 @@ func TestUnmarshalNullableTime(t *testing.T) {
 		"iso8601_time": aTime.Format(iso8601TimeFormat),
 	}
 
-	if err := UnmarshalPayload(samplePayloadWithNullables(attrs), out); err != nil {
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
 		t.Fatal(err)
 	}
 
@@ -355,7 +355,7 @@ func TestUnmarshalNullableTime(t *testing.T) {
 }
 
 func TestUnmarshalNullableBool(t *testing.T) {
-	out := new(WithNullables)
+	out := new(WithNullableAttrs)
 
 	aBool := false
 
@@ -364,7 +364,7 @@ func TestUnmarshalNullableBool(t *testing.T) {
 		"bool": aBool,
 	}
 
-	if err := UnmarshalPayload(samplePayloadWithNullables(attrs), out); err != nil {
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1508,7 +1508,7 @@ func sampleWithPointerPayload(m map[string]interface{}) io.Reader {
 	return out
 }
 
-func samplePayloadWithNullables(m map[string]interface{}) io.Reader {
+func samplePayloadWithNullableAttrs(m map[string]interface{}) io.Reader {
 	payload := &OnePayload{
 		Data: &Node{
 			ID:         "5",
