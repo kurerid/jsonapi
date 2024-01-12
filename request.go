@@ -678,7 +678,7 @@ func handleNullable(
 	var rgx = regexp.MustCompile(`\[(.*)\]`)
 	rs := rgx.FindStringSubmatch(fieldValue.Type().Name())
 
-	attrVal, err := unmarshalAttribute(attribute, args, structField, supportedNullableTypes[rs[1]])
+	attrVal, err := unmarshalAttribute(attribute, args, structField, SupportedNullableTypes[rs[1]])
 	if err != nil {
 		return reflect.ValueOf(nil), err
 	}

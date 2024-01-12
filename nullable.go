@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var supportedNullableTypes = map[string]reflect.Value{
+var SupportedNullableTypes = map[string]reflect.Value{
 	"bool":      reflect.ValueOf(false),
 	"time.Time": reflect.ValueOf(time.Time{}),
 }
