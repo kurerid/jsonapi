@@ -668,10 +668,8 @@ func handleNullable(
 	structField reflect.StructField,
 	fieldValue reflect.Value) (reflect.Value, error) {
 
-	if a, ok := attribute.(string); ok {
-		if bytes.Equal([]byte(a), []byte("null")) {
-			return reflect.ValueOf(nil), nil
-		}
+	if a, ok := attribute.(string); ok && a == "null" {
+		return reflect.ValueOf(nil), nil
 	}
 
 	innerType := fieldValue.Type().Elem()
@@ -682,7 +680,7 @@ func handleNullable(
 		return reflect.ValueOf(nil), err
 	}
 
-	fieldValue.Set(reflect.MakeMap(fieldValue.Type()))
+	fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
 	fieldValue.SetMapIndex(reflect.ValueOf(true), attrVal)
 
 	return fieldValue, nil

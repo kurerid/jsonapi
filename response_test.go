@@ -846,7 +846,7 @@ func TestNullableAttr_Time(t *testing.T) {
 			desc: "time_null",
 			input: &WithNullableAttrs{
 				ID:          5,
-				RFC3339Time: NullTime(),
+				RFC3339Time: NewNullNullableAttr[time.Time](),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
@@ -860,7 +860,7 @@ func TestNullableAttr_Time(t *testing.T) {
 			desc: "time_not_null_rfc3339",
 			input: &WithNullableAttrs{
 				ID:          5,
-				RFC3339Time: NullableTime(aTime),
+				RFC3339Time: NewNullableAttrWithValue[time.Time](aTime),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"].(string)
@@ -874,7 +874,7 @@ func TestNullableAttr_Time(t *testing.T) {
 			desc: "time_not_null_iso8601",
 			input: &WithNullableAttrs{
 				ID:          5,
-				ISO8601Time: NullableTime(aTime),
+				ISO8601Time: NewNullableAttrWithValue[time.Time](aTime),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["iso8601_time"].(string)
@@ -888,7 +888,7 @@ func TestNullableAttr_Time(t *testing.T) {
 			desc: "time_not_null_int",
 			input: &WithNullableAttrs{
 				ID:      5,
-				IntTime: NullableTime(aTime),
+				IntTime: NewNullableAttrWithValue[time.Time](aTime),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["int_time"].(float64)
@@ -941,7 +941,7 @@ func TestNullableAttr_Bool(t *testing.T) {
 			desc: "bool_null",
 			input: &WithNullableAttrs{
 				ID:   5,
-				Bool: NullBool(),
+				Bool: NewNullNullableAttr[bool](),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
@@ -955,7 +955,7 @@ func TestNullableAttr_Bool(t *testing.T) {
 			desc: "bool_not_null",
 			input: &WithNullableAttrs{
 				ID:   5,
-				Bool: NullableBool(aBool),
+				Bool: NewNullableAttrWithValue[bool](aBool),
 			},
 			verification: func(root map[string]interface{}) error {
 				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"].(bool)

@@ -2,7 +2,6 @@ package jsonapi
 
 import (
 	"errors"
-	"time"
 )
 
 // NullableAttr is a generic type, which implements a field that can be one of three states:
@@ -87,20 +86,4 @@ func (t NullableAttr[T]) IsSpecified() bool {
 // SetUnspecified sets the value to be absent from the serialized payload
 func (t *NullableAttr[T]) SetUnspecified() {
 	*t = map[bool]T{}
-}
-
-func NullableBool(v bool) NullableAttr[bool] {
-	return NewNullableAttrWithValue[bool](v)
-}
-
-func NullBool() NullableAttr[bool] {
-	return NewNullNullableAttr[bool]()
-}
-
-func NullableTime(v time.Time) NullableAttr[time.Time] {
-	return NewNullableAttrWithValue[time.Time](v)
-}
-
-func NullTime() NullableAttr[time.Time] {
-	return NewNullNullableAttr[time.Time]()
 }
