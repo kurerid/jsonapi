@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 func fixtureBlogCreate(i int) *Blog {
 	return &Blog{

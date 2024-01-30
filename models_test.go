@@ -35,6 +35,15 @@ type TimestampModel struct {
 	RFC3339P *time.Time `jsonapi:"attr,rfc3339p,rfc3339"`
 }
 
+type WithNullableAttrs struct {
+	ID          int                     `jsonapi:"primary,with-nullables"`
+	Name        string                  `jsonapi:"attr,name"`
+	IntTime     NullableAttr[time.Time] `jsonapi:"attr,int_time,omitempty"`
+	RFC3339Time NullableAttr[time.Time] `jsonapi:"attr,rfc3339_time,rfc3339,omitempty"`
+	ISO8601Time NullableAttr[time.Time] `jsonapi:"attr,iso8601_time,iso8601,omitempty"`
+	Bool        NullableAttr[bool]      `jsonapi:"attr,bool,omitempty"`
+}
+
 type Car struct {
 	ID    *string `jsonapi:"primary,cars"`
 	Make  *string `jsonapi:"attr,make,omitempty"`

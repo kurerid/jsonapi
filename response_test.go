@@ -820,6 +820,169 @@ func TestMarshal_Times(t *testing.T) {
 	}
 }
 
+func TestNullableAttr_Time(t *testing.T) {
+	aTime := time.Date(2016, 8, 17, 8, 27, 12, 23849, time.UTC)
+
+	for _, tc := range []struct {
+		desc         string
+		input        *WithNullableAttrs
+		verification func(data map[string]interface{}) error
+	}{
+		{
+			desc: "time_unspecified",
+			input: &WithNullableAttrs{
+				ID:          5,
+				RFC3339Time: nil,
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "time_null",
+			input: &WithNullableAttrs{
+				ID:          5,
+				RFC3339Time: NewNullNullableAttr[time.Time](),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "time_not_null_rfc3339",
+			input: &WithNullableAttrs{
+				ID:          5,
+				RFC3339Time: NewNullableAttrWithValue[time.Time](aTime),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"].(string)
+				if got, want := v, aTime.Format(time.RFC3339); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "time_not_null_iso8601",
+			input: &WithNullableAttrs{
+				ID:          5,
+				ISO8601Time: NewNullableAttrWithValue[time.Time](aTime),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["iso8601_time"].(string)
+				if got, want := v, aTime.Format(iso8601TimeFormat); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "time_not_null_int",
+			input: &WithNullableAttrs{
+				ID:      5,
+				IntTime: NewNullableAttrWithValue[time.Time](aTime),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["int_time"].(float64)
+				if got, want := int64(v), aTime.Unix(); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		}} {
+		t.Run(tc.desc, func(t *testing.T) {
+			out := bytes.NewBuffer(nil)
+			if err := MarshalPayload(out, tc.input); err != nil {
+				t.Fatal(err)
+			}
+			// Use the standard JSON library to traverse the genereated JSON payload.
+			data := map[string]interface{}{}
+			json.Unmarshal(out.Bytes(), &data)
+			if tc.verification != nil {
+				if err := tc.verification(data); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+func TestNullableAttr_Bool(t *testing.T) {
+	aBool := true
+
+	for _, tc := range []struct {
+		desc         string
+		input        *WithNullableAttrs
+		verification func(data map[string]interface{}) error
+	}{
+		{
+			desc: "bool_unspecified",
+			input: &WithNullableAttrs{
+				ID:   5,
+				Bool: nil,
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "bool_null",
+			input: &WithNullableAttrs{
+				ID:   5,
+				Bool: NewNullNullableAttr[bool](),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
+				if got, want := v, (interface{})(nil); got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+		{
+			desc: "bool_not_null",
+			input: &WithNullableAttrs{
+				ID:   5,
+				Bool: NewNullableAttrWithValue[bool](aBool),
+			},
+			verification: func(root map[string]interface{}) error {
+				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"].(bool)
+				if got, want := v, aBool; got != want {
+					return fmt.Errorf("got %v, want %v", got, want)
+				}
+				return nil
+			},
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			out := bytes.NewBuffer(nil)
+			if err := MarshalPayload(out, tc.input); err != nil {
+				t.Fatal(err)
+			}
+			// Use the standard JSON library to traverse the genereated JSON payload.
+			data := map[string]interface{}{}
+			json.Unmarshal(out.Bytes(), &data)
+			if tc.verification != nil {
+				if err := tc.verification(data); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestSupportsLinkable(t *testing.T) {
 	testModel := &Blog{
 		ID:        5,
