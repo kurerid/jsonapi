@@ -835,8 +835,9 @@ func TestNullableAttr_Time(t *testing.T) {
 				RFC3339Time: nil,
 			},
 			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
-				if got, want := v, (interface{})(nil); got != want {
+				_, ok := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
+
+				if got, want := ok, false; got != want {
 					return fmt.Errorf("got %v, want %v", got, want)
 				}
 				return nil
@@ -849,8 +850,9 @@ func TestNullableAttr_Time(t *testing.T) {
 				RFC3339Time: NewNullNullableAttr[time.Time](),
 			},
 			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
-				if got, want := v, (interface{})(nil); got != want {
+				_, ok := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["rfc3339_time"]
+
+				if got, want := ok, true; got != want {
 					return fmt.Errorf("got %v, want %v", got, want)
 				}
 				return nil
@@ -930,8 +932,9 @@ func TestNullableAttr_Bool(t *testing.T) {
 				Bool: nil,
 			},
 			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
-				if got, want := v, (interface{})(nil); got != want {
+				_, ok := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
+
+				if got, want := ok, false; got != want {
 					return fmt.Errorf("got %v, want %v", got, want)
 				}
 				return nil
@@ -944,8 +947,9 @@ func TestNullableAttr_Bool(t *testing.T) {
 				Bool: NewNullNullableAttr[bool](),
 			},
 			verification: func(root map[string]interface{}) error {
-				v := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
-				if got, want := v, (interface{})(nil); got != want {
+				_, ok := root["data"].(map[string]interface{})["attributes"].(map[string]interface{})["bool"]
+
+				if got, want := ok, true; got != want {
 					return fmt.Errorf("got %v, want %v", got, want)
 				}
 				return nil
