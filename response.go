@@ -340,11 +340,13 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 
 				// handle null
 				if fieldValue.MapIndex(reflect.ValueOf(false)).IsValid() {
+					node.Attributes[args[1]] = json.RawMessage("null")
 					continue
-				}
+				} else {
 
-				// handle value
-				fieldValue = fieldValue.MapIndex(reflect.ValueOf(true))
+					// handle value
+					fieldValue = fieldValue.MapIndex(reflect.ValueOf(true))
+				}
 			}
 
 			if fieldValue.Type() == reflect.TypeOf(time.Time{}) {
