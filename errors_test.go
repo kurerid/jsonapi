@@ -28,9 +28,9 @@ func TestMarshalErrorsWritesTheExpectedPayload(t *testing.T) {
 	}{
 		{
 			Title: "TestFieldsAreSerializedAsNeeded",
-			In:    []*ErrorObject{{ID: "0", Title: "Test title.", Detail: "Test detail", Status: "400", Code: "E1100"}},
+			In:    []*ErrorObject{{ID: "0", Title: "Test title.", Detail: "Test detail", Status: "400", Code: "E1100", Source: &ErrorSource{Pointer: "title"}}},
 			Out: map[string]interface{}{"errors": []interface{}{
-				map[string]interface{}{"id": "0", "title": "Test title.", "detail": "Test detail", "status": "400", "code": "E1100"},
+				map[string]interface{}{"id": "0", "title": "Test title.", "detail": "Test detail", "status": "400", "code": "E1100", "source": map[string]interface{}{"pointer": "title"}},
 			}},
 		},
 		{
