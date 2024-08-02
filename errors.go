@@ -50,8 +50,9 @@ type ErrorObject struct {
 }
 
 // ErrorSource is an object containing references to the primary source of the error.
+// Only one field should be populated depending on the source of the error.
 type ErrorSource struct {
-	// Pointer is a string indicating the value in the request document that caused the error.
+	// Pointer is a JSON Pointer (RFC6901) indicating the value in the request document that caused the error.
 	Pointer string `json:"pointer,omitempty"`
 
 	// Parameter is a string indicating which query or path parameter caused the error.
