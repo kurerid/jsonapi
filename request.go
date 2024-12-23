@@ -309,8 +309,32 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 	modelValue := model.Elem()
 	modelType := modelValue.Type()
+	polyrelationFields := map[string]reflect.Type{}
 
 	var er error
+
+	// preprocess the model to find polyrelation fields
+	for i := 0; i < modelValue.NumField(); i++ {
+		fieldValue := modelValue.Field(i)
+		fieldType := modelType.Field(i)
+
+		args, err := getStructTags(fieldType)
+		if err != nil {
+			er = err
+			break
+		}
+
+		if len(args) < 2 {
+			continue
+		}
+
+		annotation := args[0]
+		name := args[1]
+
+		if annotation == annotationPolyRelation {
+			polyrelationFields[name] = fieldValue.Type()
+		}
+	}
 
 	for i := 0; i < modelValue.NumField(); i++ {
 		fieldValue := modelValue.Field(i)
@@ -471,6 +495,10 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 					so unmarshal and set fieldValue only if data obj is not null
 				*/
 				if relationship.Data == nil {
+					continue
+				}
+
+				if pFieldType, ok := polyrelationFields[args[1]]; ok && fieldValue.Type() != pFieldType {
 					continue
 				}
 
