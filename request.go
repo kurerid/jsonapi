@@ -498,6 +498,9 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 					continue
 				}
 
+				// If the field is also a polyrelation field, then prefer the polyrelation.
+				// Otherwise stop processing this node.
+				// This is to allow relation and polyrelation fields to coexist, supporting deprecation for consumers
 				if pFieldType, ok := polyrelationFields[args[1]]; ok && fieldValue.Type() != pFieldType {
 					continue
 				}
