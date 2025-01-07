@@ -847,6 +847,50 @@ func Test_UnmarshalPayload_polymorphicRelations_omitted(t *testing.T) {
 	}
 }
 
+func Test_UnmarshalPayload_polymorphicRelations_deprecatedRelation(t *testing.T) {
+	type withDeprecatedRelation struct {
+		ID    string      `jsonapi:"primary,blogs"`
+		Title string      `jsonapi:"attr,title"`
+		Media *OneOfMedia `jsonapi:"polyrelation,media"`
+		Image *Image      `jsonapi:"relation,media"` // Deprecated
+	}
+
+	in := bytes.NewReader([]byte(`{
+		"data": [{
+			"type": "blogs",
+			"id":   "3",
+			"attributes": {
+				"title": "Hello, World"
+			},
+			"relationships": {
+				"media": {
+					"data": {
+						"type": "videos",
+						"id":   "123"
+					}
+				}
+			}
+		}]
+	}`))
+
+	model := reflect.TypeOf(new(withDeprecatedRelation))
+
+	out, err := UnmarshalManyPayload(in, model)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result := out[0].(*withDeprecatedRelation)
+
+	if result.Title != "Hello, World" {
+		t.Errorf("expected Title %q but got %q", "Hello, World", result.Title)
+	}
+
+	if result.Media.Video.ID != "123" {
+		t.Fatalf("expected Video to be \"123\", but got %+v", result.Media.Video)
+	}
+}
+
 func Test_choiceStructMapping(t *testing.T) {
 	cases := []struct {
 		val reflect.Type
