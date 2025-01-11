@@ -226,13 +226,19 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 	node := new(Node)
 
 	var er error
+	var modelValue reflect.Value
+	var modelType reflect.Type
 	value := reflect.ValueOf(model)
-	if value.IsNil() {
-		return nil, nil
+	if value.Type().Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return nil, nil
+		}
+		modelValue = value.Elem()
+		modelType = value.Type().Elem()
+	} else {
+		modelValue = value
+		modelType = value.Type()
 	}
-
-	modelValue := value.Elem()
-	modelType := value.Type().Elem()
 
 	for i := 0; i < modelValue.NumField(); i++ {
 		fieldValue := modelValue.Field(i)
@@ -395,11 +401,20 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 					continue
 				}
 
-				strAttr, ok := fieldValue.Interface().(string)
-				if ok {
-					node.Attributes[args[1]] = strAttr
+				if fieldValue.Type().Kind() == reflect.Struct || (fieldValue.Type().Kind() == reflect.Pointer && fieldValue.Elem().Kind() == reflect.Struct) {
+					nested, err := visitModelNode(fieldValue.Interface(), nil, false)
+					if err != nil {
+						er = fmt.Errorf("failed to marshal nested attribute %q: %w", args[1], err)
+						break
+					}
+					node.Attributes[args[1]] = nested.Attributes
 				} else {
-					node.Attributes[args[1]] = fieldValue.Interface()
+					strAttr, ok := fieldValue.Interface().(string)
+					if ok {
+						node.Attributes[args[1]] = strAttr
+					} else {
+						node.Attributes[args[1]] = fieldValue.Interface()
+					}
 				}
 			}
 		} else if annotation == annotationRelation || annotation == annotationPolyRelation {

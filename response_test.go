@@ -682,6 +682,60 @@ func TestSupportsAttributes(t *testing.T) {
 	}
 }
 
+func TestMarshalObjectAttribute(t *testing.T) {
+	now := time.Now()
+	testModel := &Company{
+		ID:   "5",
+		Name: "test",
+		Boss: Employee{
+			HiredAt: &now,
+		},
+		Manager: &Employee{
+			Firstname: "Dave",
+			HiredAt:   &now,
+		},
+	}
+
+	out := bytes.NewBuffer(nil)
+	if err := MarshalPayload(out, testModel); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := new(OnePayload)
+	if err := json.NewDecoder(out).Decode(resp); err != nil {
+		t.Fatal(err)
+	}
+
+	data := resp.Data
+
+	if data.Attributes == nil {
+		t.Fatalf("Expected attributes")
+	}
+
+	boss, ok := data.Attributes["boss"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected boss attribute, got %v", data.Attributes)
+	}
+
+	hiredAt, ok := boss["hired-at"]
+	if !ok {
+		t.Fatalf("Expected boss attribute to contain a \"hired-at\" property, got %v", boss)
+	}
+
+	if hiredAt != now.UTC().Format(iso8601TimeFormat) {
+		t.Fatalf("Expected hired-at to be %s, got %s", now.UTC().Format(iso8601TimeFormat), hiredAt)
+	}
+
+	manager, ok := data.Attributes["manager"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected manager attribute, got %v", data.Attributes)
+	}
+
+	if manager["firstname"] != "Dave" {
+		t.Fatalf("Expected manager.firstname to be \"Dave\", got %v", manager)
+	}
+}
+
 func TestOmitsZeroTimes(t *testing.T) {
 	testModel := &Blog{
 		ID:        5,
