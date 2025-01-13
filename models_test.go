@@ -190,6 +190,16 @@ type Company struct {
 	FoundedAt time.Time `jsonapi:"attr,founded-at,iso8601"`
 }
 
+type CompanyOmitEmpty struct {
+	ID        string    `jsonapi:"primary,companies"`
+	Name      string    `jsonapi:"attr,name,omitempty"`
+	Boss      Employee  `jsonapi:"attr,boss,omitempty"`
+	Manager   *Employee `jsonapi:"attr,manager,omitempty"`
+	Teams     []Team    `jsonapi:"attr,teams,omitempty"`
+	People    []*People `jsonapi:"attr,people,omitempty"`
+	FoundedAt time.Time `jsonapi:"attr,founded-at,iso8601,omitempty"`
+}
+
 type People struct {
 	Name string `jsonapi:"attr,name"`
 	Age  int    `jsonapi:"attr,age"`

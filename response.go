@@ -401,7 +401,28 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 					continue
 				}
 
-				if fieldValue.Type().Kind() == reflect.Struct || (fieldValue.Type().Kind() == reflect.Pointer && fieldValue.Elem().Kind() == reflect.Struct) {
+				isStruct := fieldValue.Type().Kind() == reflect.Struct
+				isPointerToStruct := fieldValue.Type().Kind() == reflect.Pointer && fieldValue.Elem().Kind() == reflect.Struct
+				isSliceOfStruct := fieldValue.Type().Kind() == reflect.Slice && fieldValue.Type().Elem().Kind() == reflect.Struct
+				isSliceOfPointerToStruct := fieldValue.Type().Kind() == reflect.Slice && fieldValue.Type().Elem().Kind() == reflect.Pointer && fieldValue.Type().Elem().Elem().Kind() == reflect.Struct
+
+				if isSliceOfStruct || isSliceOfPointerToStruct {
+					if fieldValue.Len() == 0 && omitEmpty {
+						continue
+					}
+					// Nested slice of object attributes
+					manyNested, err := visitModelNodeRelationships(fieldValue, nil, false)
+					if err != nil {
+						er = fmt.Errorf("failed to marshal slice of nested attribute %q: %w", args[1], err)
+						break
+					}
+					nestedNodes := make([]any, len(manyNested.Data))
+					for i, n := range manyNested.Data {
+						nestedNodes[i] = n.Attributes
+					}
+					node.Attributes[args[1]] = nestedNodes
+				} else if isStruct || isPointerToStruct {
+					// Nested object attribute
 					nested, err := visitModelNode(fieldValue.Interface(), nil, false)
 					if err != nil {
 						er = fmt.Errorf("failed to marshal nested attribute %q: %w", args[1], err)
@@ -409,6 +430,7 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 					}
 					node.Attributes[args[1]] = nested.Attributes
 				} else {
+					// Primative attribute
 					strAttr, ok := fieldValue.Interface().(string)
 					if ok {
 						node.Attributes[args[1]] = strAttr
@@ -626,7 +648,7 @@ func visitModelNodeRelationships(models reflect.Value, included *map[string]*Nod
 
 	for i := 0; i < models.Len(); i++ {
 		model := models.Index(i)
-		if !model.IsValid() || model.IsNil() {
+		if !model.IsValid() || (model.Kind() == reflect.Pointer && model.IsNil()) {
 			return nil, ErrUnexpectedNil
 		}
 
