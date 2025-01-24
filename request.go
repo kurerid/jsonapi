@@ -488,10 +488,30 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 
 				buf := bytes.NewBuffer(nil)
 
-				json.NewEncoder(buf).Encode(
-					data.Relationships[args[1]],
-				)
-				json.NewDecoder(buf).Decode(relationship)
+				relDataStr := data.Relationships[args[1]]
+				json.NewEncoder(buf).Encode(relDataStr)
+
+				isExplicitNull := false
+				relationshipDecodeErr := json.NewDecoder(buf).Decode(relationship)
+				if relationshipDecodeErr == nil && relationship.Data == nil {
+					// If the relationship was a valid node and relationship data was null
+					// this indicates disassociating the relationship
+					isExplicitNull = true
+				} else if relationshipDecodeErr != nil {
+					er = fmt.Errorf("decode err %v\n", relationshipDecodeErr)
+				}
+
+				// This will hold either the value of the choice type model or the actual
+				// model, depending on annotation
+				m := reflect.New(fieldValue.Type().Elem())
+
+				// Nullable relationships have an extra pointer indirection
+				// unwind that here
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
+					if m.Kind() == reflect.Ptr {
+						m = reflect.New(fieldValue.Type().Elem().Elem())
+					}
+				}
 
 				/*
 					http://jsonapi.org/format/#document-resource-object-relationships
@@ -500,6 +520,12 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 					so unmarshal and set fieldValue only if data obj is not null
 				*/
 				if relationship.Data == nil {
+					// Explicit null supplied for the field value
+					// If a nullable relationship we set the field value to a map with a single entry
+					if isExplicitNull {
+						fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+						fieldValue.SetMapIndex(reflect.ValueOf(false), m)
+					}
 					continue
 				}
 
@@ -510,9 +536,6 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 					continue
 				}
 
-				// This will hold either the value of the choice type model or the actual
-				// model, depending on annotation
-				m := reflect.New(fieldValue.Type().Elem())
 
 				// Check if the item in the relationship was already processed elsewhere. Avoids potential infinite recursive loops
 				// caused by circular references between included relationships (two included items include one another)
@@ -537,7 +560,12 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 					break
 				}
 
-				fieldValue.Set(m)
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
+					fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+					fieldValue.SetMapIndex(reflect.ValueOf(true), m)
+				} else {
+					fieldValue.Set(m)
+				}
 			}
 		} else if annotation == annotationLinks {
 			if data.Links == nil {
