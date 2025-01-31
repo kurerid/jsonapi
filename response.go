@@ -221,6 +221,18 @@ func selectChoiceTypeStructField(structValue reflect.Value) (reflect.Value, erro
 	return reflect.Value{}, errors.New("no non-nil choice field was found in the specified struct")
 }
 
+// hasJSONAPIAnnotations returns true if any of the fields of a struct type t
+// has a jsonapi annotation. This function will panic if t is not a struct type.
+func hasJSONAPIAnnotations(t reflect.Type) bool {
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get(annotationJSONAPI)
+		if tag != "" {
+			return true
+		}
+	}
+	return false
+}
+
 func visitModelNodeAttribute(args []string, node *Node, fieldValue reflect.Value) error {
 	var omitEmpty, iso8601, rfc3339 bool
 
@@ -314,31 +326,56 @@ func visitModelNodeAttribute(args []string, node *Node, fieldValue reflect.Value
 			if fieldValue.Len() == 0 && omitEmpty {
 				return nil
 			}
-			// Nested slice of object attributes
-			manyNested, err := visitModelNodeRelationships(fieldValue, nil, false)
-			if err != nil {
-				return fmt.Errorf("failed to marshal slice of nested attribute %q: %w", args[1], err)
-			}
-			nestedNodes := make([]any, len(manyNested.Data))
-			for i, n := range manyNested.Data {
-				nestedNodes[i] = n.Attributes
-			}
-			node.Attributes[args[1]] = nestedNodes
-		} else if isStruct || isPointerToStruct {
-			// Nested object attribute
-			nested, err := visitModelNode(fieldValue.Interface(), nil, false)
-			if err != nil {
-				return fmt.Errorf("failed to marshal nested attribute %q: %w", args[1], err)
-			}
-			node.Attributes[args[1]] = nested.Attributes
-		} else {
-			// Primitive attribute
-			strAttr, ok := fieldValue.Interface().(string)
-			if ok {
-				node.Attributes[args[1]] = strAttr
+
+			var t reflect.Type
+			if isSliceOfStruct {
+				t = fieldValue.Type().Elem()
 			} else {
-				node.Attributes[args[1]] = fieldValue.Interface()
+				t = fieldValue.Type().Elem().Elem()
 			}
+
+			// This check is to maintain backwards compatibility with `json` annotated
+			// nested structs, which should fall through to "primitive" handling below
+			if hasJSONAPIAnnotations(t) {
+				// Nested slice of object attributes
+				manyNested, err := visitModelNodeRelationships(fieldValue, nil, false)
+				if err != nil {
+					return fmt.Errorf("failed to marshal slice of nested attribute %q: %w", args[1], err)
+				}
+				nestedNodes := make([]any, len(manyNested.Data))
+				for i, n := range manyNested.Data {
+					nestedNodes[i] = n.Attributes
+				}
+				node.Attributes[args[1]] = nestedNodes
+				return nil
+			}
+		} else if isStruct || isPointerToStruct {
+			var t reflect.Type
+			if isStruct {
+				t = fieldValue.Type()
+			} else {
+				t = fieldValue.Type().Elem()
+			}
+
+			// This check is to maintain backwards compatibility with `json` annotated
+			// nested structs, which should fall through to "primitive" handling below
+			if hasJSONAPIAnnotations(t) {
+				// Nested object attribute
+				nested, err := visitModelNode(fieldValue.Interface(), nil, false)
+				if err != nil {
+					return fmt.Errorf("failed to marshal nested attribute %q: %w", args[1], err)
+				}
+				node.Attributes[args[1]] = nested.Attributes
+				return nil
+			}
+		}
+
+		// Primitive attribute
+		strAttr, ok := fieldValue.Interface().(string)
+		if ok {
+			node.Attributes[args[1]] = strAttr
+		} else {
+			node.Attributes[args[1]] = fieldValue.Interface()
 		}
 	}
 
