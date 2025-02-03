@@ -405,6 +405,7 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 			} else {
 				node.Relationships[args[1]] = json.RawMessage("{\"data\":null}")
 			}
+			return nil
 		} else if fieldValue.MapIndex(reflect.ValueOf(true)).IsValid() {
 			// handle value
 			fieldValue = fieldValue.MapIndex(reflect.ValueOf(true))
