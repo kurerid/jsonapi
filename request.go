@@ -99,19 +99,19 @@ type includedNode struct {
 // model interface{} should be a pointer to a struct.
 func UnmarshalPayload(in io.Reader, model interface{}) error {
 	payload := new(OnePayload)
-	includedMap := make(map[string]*includedNode)
+	included := make(map[string]*includedNode)
 
 	if err := json.NewDecoder(in).Decode(payload); err != nil {
 		return err
 	}
 
 	if payload.Included != nil {
-		for _, included := range payload.Included {
-			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
-			includedMap[key] = &includedNode{included, nil}
+		for _, include := range payload.Included {
+			key := fmt.Sprintf("%s,%s", include.Type, include.ID)
+			included[key] = &includedNode{include, nil}
 		}
 
-		return unmarshalNode(payload.Data, reflect.ValueOf(model), &includedMap)
+		return unmarshalNode(payload.Data, reflect.ValueOf(model), &included)
 	}
 	return unmarshalNode(payload.Data, reflect.ValueOf(model), nil)
 }
@@ -125,19 +125,19 @@ func UnmarshalManyPayload(in io.Reader, t reflect.Type) ([]interface{}, error) {
 		return nil, err
 	}
 
-	models := []interface{}{}                 // will be populated from the "data"
-	includedMap := map[string]*includedNode{} // will be populate from the "included"
+	models := []interface{}{}              // will be populated from the "data"
+	included := map[string]*includedNode{} // will be populate from the "included"
 
 	if payload.Included != nil {
-		for _, included := range payload.Included {
-			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
-			includedMap[key] = &includedNode{included, nil}
+		for _, include := range payload.Included {
+			key := fmt.Sprintf("%s,%s", include.Type, include.ID)
+			included[key] = &includedNode{include, nil}
 		}
 	}
 
 	for _, data := range payload.Data {
 		model := reflect.New(t.Elem())
-		err := unmarshalNode(data, model, &includedMap)
+		err := unmarshalNode(data, model, &included)
 		if err != nil {
 			return nil, err
 		}
@@ -514,6 +514,8 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 				// model, depending on annotation
 				m := reflect.New(fieldValue.Type().Elem())
 
+				// Check if the item in the relationship was already processed elsewhere. Avoids potential infinite recursive loops
+				// caused by circular references between included relationships (two included items include one another)
 				includedKey := fmt.Sprintf("%s,%s", relationship.Data.Type, relationship.Data.ID)
 				if included != nil && (*included)[includedKey] != nil {
 					if (*included)[includedKey].model != nil {
