@@ -487,7 +487,6 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 				relationship := new(RelationshipOneNode)
 
 				buf := bytes.NewBuffer(nil)
-
 				relDataStr := data.Relationships[args[1]]
 				json.NewEncoder(buf).Encode(relDataStr)
 
@@ -498,7 +497,7 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 					// this indicates disassociating the relationship
 					isExplicitNull = true
 				} else if relationshipDecodeErr != nil {
-					er = fmt.Errorf("decode err %v\n", relationshipDecodeErr)
+					er = fmt.Errorf("Could not unmarshal json: %w", relationshipDecodeErr)
 				}
 
 				// This will hold either the value of the choice type model or the actual
@@ -512,7 +511,6 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 						m = reflect.New(fieldValue.Type().Elem().Elem())
 					}
 				}
-
 				/*
 					http://jsonapi.org/format/#document-resource-object-relationships
 					http://jsonapi.org/format/#document-resource-object-linkage
@@ -522,7 +520,7 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 				if relationship.Data == nil {
 					// Explicit null supplied for the field value
 					// If a nullable relationship we set the field value to a map with a single entry
-					if isExplicitNull {
+					if isExplicitNull && strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
 						fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
 						fieldValue.SetMapIndex(reflect.ValueOf(false), m)
 					}
@@ -535,7 +533,6 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*includ
 				if pFieldType, ok := polyrelationFields[args[1]]; ok && fieldValue.Type() != pFieldType {
 					continue
 				}
-
 
 				// Check if the item in the relationship was already processed elsewhere. Avoids potential infinite recursive loops
 				// caused by circular references between included relationships (two included items include one another)
