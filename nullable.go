@@ -126,7 +126,7 @@ func NewNullableRelationshipWithValue[T any](t T) NullableRelationship[T] {
 	return n
 }
 
-// NewNullNullableAttr is a convenience helper to allow constructing a NullableAttr with
+// NewNullNullableRelationship is a convenience helper to allow constructing a NullableRelationship with
 // an explicit `null`, for instance to construct a field inside a struct
 // without introducing an intermediate variable
 func NewNullNullableRelationship[T any]() NullableRelationship[T] {
