@@ -152,7 +152,8 @@ func (t *NullableRelationship[T]) Set(value T) {
 	*t = map[bool]T{true: value}
 }
 
-// Set sets the underlying value to a given value
+// SetInterface sets the underlying value from an empty interface,
+// performing a type assertion to T.
 func (t *NullableRelationship[T]) SetInterface(value interface{}) {
 	t.Set(value.(T))
 }
