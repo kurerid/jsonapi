@@ -117,8 +117,8 @@ func (t *NullableAttr[T]) SetUnspecified() {
 	*t = map[bool]T{}
 }
 
-// NewNullableAttrWithValue is a convenience helper to allow constructing a
-// NullableAttr with a given value, for instance to construct a field inside a
+// NewNullableRelationshipWithValue is a convenience helper to allow constructing a
+// NullableRelationship with a given value, for instance to construct a field inside a
 // struct without introducing an intermediate variable.
 func NewNullableRelationshipWithValue[T any](t T) NullableRelationship[T] {
 	var n NullableRelationship[T]
