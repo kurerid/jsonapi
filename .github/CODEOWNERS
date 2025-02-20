@@ -2,8 +2,8 @@
 # More on CODEOWNERS files: https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 
 # Default owners
-* @hashicorp/tf-core-cloud
 * @hashicorp/team-ip-compliance
+* @hashicorp/tf-core-cloud
 
 # Add override rules below. Each line is a file/folder pattern followed by one or more owners.
 # Being an owner means those groups or individuals will be added as reviewers to PRs affecting
