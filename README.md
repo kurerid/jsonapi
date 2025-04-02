@@ -475,6 +475,8 @@ t, err := s.UnsettableTime.Get()
 All other struct tags used in the attribute definition will be honored when
 marshaling and unmarshaling non-null values for the inner type.
 
+### Nullable Relationship
+
 ### Custom types
 
 Custom types are supported for primitive types, only, as attributes.  Examples,
