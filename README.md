@@ -477,7 +477,7 @@ marshaling and unmarshaling non-null values for the inner type.
 
 ### Nullable Relationship
 
-The `NullableRelationship` type is a generic type used to handle relationships in JSON API payloads that is not set, set to null or set to a valid relationship in the request. This type provides an API for sending and receiving significant `null` values for relationship values of any type.
+The `NullableRelationship` type is a generic type used to handle relationships in JSON API payloads that are either not set, set to null, or set to a valid relationship in the request. This type provides an API for sending and receiving significant `null` values for relationship values of any type. It should be used when there's a need to distinguish between explicitly setting the relationship to `null` versus not including the attribute in the request.
 
 In the example below, a payload is presented for a fictitious API that makes use of significant `null` values. Once enabled, the `NullableComment` relationship can only be disabled by updating it to a `null` value.
 
