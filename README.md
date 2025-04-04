@@ -475,6 +475,62 @@ t, err := s.UnsettableTime.Get()
 All other struct tags used in the attribute definition will be honored when
 marshaling and unmarshaling non-null values for the inner type.
 
+### Nullable Relationship
+
+The `NullableRelationship` type is a generic type used to handle relationships in JSON API payloads that are either not set, set to null, or set to a valid relationship in the request. This type provides an API for sending and receiving significant `null` values for relationship values of any type. It should be used when there's a need to distinguish between explicitly setting the relationship to `null` versus not including the attribute in the request.
+
+In the example below, a payload is presented for a fictitious API that makes use of significant `null` values. Once enabled, the `NullableComment` relationship can only be disabled by updating it to a `null` value.
+
+The payload struct below makes use of a `NullableRelationship` with an inner `*Comment` to allow this behavior:
+
+```go
+type WithNullableAttrs struct {
+    RFC3339Time     jsonapi.NullableAttr[time.Time]        `jsonapi:"attr,rfc3339_time,rfc3339,omitempty"`
+    ISO8601Time     jsonapi.NullableAttr[time.Time]        `jsonapi:"attr,iso8601_time,iso8601,omitempty"`
+    Bool            jsonapi.NullableAttr[bool]             `jsonapi:"attr,bool,omitempty"`
+    NullableComment jsonapi.NullableRelationship[*Comment] `jsonapi:"relation,nullable_comment,omitempty"`
+}
+```
+
+To enable the relationship as described above, a non-null `*Comment` value is sent to the API. This is done by using the exported `NewNullableRelationshipWithValue[T]()` method:
+
+```go
+comment := &Comment{
+    ID:   5,
+    Body: "Hello World",
+}
+
+s := WithNullableAttrs{
+    NullableComment: jsonapi.NewNullableRelationshipWithValue[*Comment](comment),
+}
+```
+
+To disable the relationship, a `null` value needs to be sent to the API. This is done by using the exported `NewNullNullableRelationship[T]()` method:
+
+```go
+s := WithNullableAttrs{
+    NullableComment: jsonapi.NewNullNullableRelationship[*Comment](),
+}
+```
+
+Once a payload has been marshaled, the relationship value is flattened to a reference value:
+
+```json
+"nullable_comment": {"data": {"type": "comments", "id": "5"}}
+```
+
+Significant nulls are also included and flattened, even when specifying `omitempty`:
+
+```json
+"nullable_comment": {"data": null}
+```
+
+Once a payload is unmarshaled, the target relationship field is hydrated with the value in the payload and can be retrieved with the `Get()` method:
+
+```go
+nullableComment, err := s.NullableComment.Get()
+```
+
 ### Custom types
 
 Custom types are supported for primitive types, only, as attributes.  Examples,
