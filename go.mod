@@ -1,3 +1,3 @@
-module github.com/hashicorp/jsonapi
+module github.com/Aleerian/jsonapi
 
 go 1.18
