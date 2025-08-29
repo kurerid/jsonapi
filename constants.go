@@ -9,6 +9,7 @@ const (
 	annotationRelation     = "relation"
 	annotationPolyRelation = "polyrelation"
 	annotationLinks        = "links"
+	annotationMeta         = "meta"
 	annotationOmitEmpty    = "omitempty"
 	annotationISO8601      = "iso8601"
 	annotationRFC3339      = "rfc3339"

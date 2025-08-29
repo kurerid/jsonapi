@@ -702,6 +702,9 @@ func toShallowNode(node *Node) *Node {
 	} else {
 		ret.ID = node.ID
 	}
+	if node.Meta != nil {
+		ret.Meta = node.Meta
+	}
 	return ret
 }
 
