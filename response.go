@@ -661,6 +661,8 @@ func visitModelNode(model interface{}, included *map[string]*Node,
 		} else if annotation == annotationLinks {
 			// Nothing. Ignore this field, as Links fields are only for unmarshaling requests.
 			// The Linkable interface methods are used for marshaling data in a response.
+		} else if annotation == annotationMeta {
+
 		} else {
 			er = ErrBadJSONAPIStructTag
 			break

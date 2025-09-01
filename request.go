@@ -587,32 +587,10 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 				continue
 			}
 
-			links := make(Links, len(*data.Meta))
+			links := make(Meta, len(*data.Meta))
 
 			for k, v := range *data.Meta {
 				link := v // default case (including string urls)
-
-				// Unmarshal link objects to Link
-				if t, ok := v.(map[string]interface{}); ok {
-					unmarshaledHref := ""
-					href, ok := t["href"].(string)
-					if ok {
-						unmarshaledHref = href
-					}
-
-					unmarshaledMeta := make(Meta)
-					if meta, ok := t["meta"].(map[string]interface{}); ok {
-						for metaK, metaV := range meta {
-							unmarshaledMeta[metaK] = metaV
-						}
-					}
-
-					link = Link{
-						Href: unmarshaledHref,
-						Meta: unmarshaledMeta,
-					}
-				}
-
 				links[k] = link
 			}
 
