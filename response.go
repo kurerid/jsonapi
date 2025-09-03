@@ -78,6 +78,21 @@ func MarshalPayload(w io.Writer, models interface{}) error {
 func Marshal(models interface{}) (Payloader, error) {
 	switch vals := reflect.ValueOf(models); vals.Kind() {
 	case reflect.Slice:
+		length := vals.Len()
+		for i := 0; i < length; i++ {
+			elem := vals.Index(i)
+
+			// Разыменовываем, если pointer
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem()
+			}
+
+			// Разрешаем только struct
+			if elem.Kind() != reflect.Struct {
+				return nil, ErrUnexpectedType
+			}
+		}
+
 		m, err := convertToSliceInterface(&models)
 		if err != nil {
 			return nil, err

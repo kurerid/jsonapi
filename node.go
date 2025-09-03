@@ -119,3 +119,11 @@ type RelationshipMetable interface {
 	// JSONRelationshipMeta will be invoked for each relationship with the corresponding relation name (e.g. `comments`)
 	JSONAPIRelationshipMeta(relation string) *Meta
 }
+
+// IncludeController is used to control whether a relation
+// should be marshaled into the top-level "included" section.
+type IncludeController interface {
+	// ShouldInclude will be invoked for each relation with
+	// the corresponding relation name (e.g. `company`).
+	ShouldInclude(relation string) bool
+}
