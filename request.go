@@ -362,7 +362,10 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 			}
 
 			if data.ID == "" {
-				continue
+				if data.Lid == "" {
+					continue
+				}
+				data.ID = data.Lid
 			}
 
 			// ID will have to be transmitted as astring per the JSON API spec
