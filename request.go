@@ -618,6 +618,9 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 }
 
 func fullNode(n *Node, included *map[string]*Node) *Node {
+	if n.ID == "" && n.Lid != "" {
+		n.ID = n.Lid
+	}
 	includedKey := fmt.Sprintf("%s,%s", n.Type, n.ID)
 
 	if included != nil && (*included)[includedKey] != nil {
