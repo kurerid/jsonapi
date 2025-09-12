@@ -102,6 +102,9 @@ func UnmarshalPayload(in io.Reader, model interface{}) error {
 	if payload.Included != nil {
 		includedMap := make(map[string]*Node)
 		for _, included := range payload.Included {
+			if included.Lid != "" {
+				included.ID = included.Lid
+			}
 			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
 			includedMap[key] = included
 		}
@@ -125,6 +128,9 @@ func UnmarshalManyPayload(in io.Reader, t reflect.Type) ([]interface{}, error) {
 
 	if payload.Included != nil {
 		for _, included := range payload.Included {
+			if included.Lid != "" {
+				included.ID = included.Lid
+			}
 			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
 			includedMap[key] = included
 		}
