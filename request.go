@@ -485,7 +485,13 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 					models = reflect.Append(models, m)
 				}
 
-				fieldValue.Set(models)
+				if len(data) == 0 {
+					// создаём пустой slice нужного типа, чтобы он не был nil
+					emptySlice := reflect.MakeSlice(sliceType, 0, 0)
+					fieldValue.Set(emptySlice)
+				} else {
+					fieldValue.Set(models)
+				}
 			} else {
 				// to-one relationships
 				relationship := new(RelationshipOneNode)
