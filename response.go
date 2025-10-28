@@ -755,6 +755,7 @@ func appendIncluded(m *map[string]*Node, nodes ...*Node) {
 		k := fmt.Sprintf("%s,%s", n.Type, n.ID)
 
 		if _, hasNode := included[k]; hasNode {
+			included[k] = n
 			continue
 		}
 
