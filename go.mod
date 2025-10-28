@@ -1,3 +1,3 @@
-module github.com/Aleerian/jsonapi
+module github.com/kurerid/jsonapi
 
 go 1.18
