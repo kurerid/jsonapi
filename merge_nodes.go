@@ -84,16 +84,22 @@ func countNonZeroValuesRecursive(data interface{}) int {
 
 	switch v := data.(type) {
 	case map[string]interface{}:
-		count := 0
+		if len(v) == 0 {
+			return 0 // Пустая map = 0 points
+		}
+
+		count := 1 // +1 point за сам факт непустой map
 		for _, value := range v {
-			if !isZeroValueRecursive(value) {
-				count += countNonZeroValuesRecursive(value)
-			}
+			count += countNonZeroValuesRecursive(value)
 		}
 		return count
 
 	case []interface{}:
-		count := 0
+		if len(v) == 0 {
+			return 0 // Пустой slice = 0 points
+		}
+
+		count := 1 // +1 point за сам факт непустого slice
 		for _, item := range v {
 			count += countNonZeroValuesRecursive(item)
 		}
@@ -101,7 +107,7 @@ func countNonZeroValuesRecursive(data interface{}) int {
 
 	default:
 		if !isZeroValueRecursive(v) {
-			return 1
+			return 1 // +1 point за non-zero значение
 		}
 		return 0
 	}
