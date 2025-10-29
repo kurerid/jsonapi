@@ -1,20 +1,21 @@
 package jsonapi
 
 import (
+	"reflect"
 	"time"
 )
 
-// MergeNodes объединяет две структуры Node, выбирая вариант с большим количеством non-zero значений
+// MergeNodes объединяет две структуры Node, рекурсивно выбирая вариант с большим количеством non-zero значений
 func mergeNodes(base, source *Node) *Node {
 	result := &Node{}
 
-	// Простые строковые поля (приоритет source)
+	// Простые строковые поля
 	result.Type = chooseNonEmpty(base.Type, source.Type)
 	result.ID = chooseNonEmpty(base.ID, source.ID)
 	result.Lid = chooseNonEmpty(base.Lid, source.Lid)
 	result.ClientID = chooseNonEmpty(base.ClientID, source.ClientID)
 
-	// Map поля - выбираем тот, где больше non-zero values
+	// Map поля - рекурсивно выбираем тот, где больше non-zero values
 	result.Attributes = chooseMapWithMoreData(base.Attributes, source.Attributes)
 	result.Relationships = chooseMapWithMoreData(base.Relationships, source.Relationships)
 
@@ -25,7 +26,7 @@ func mergeNodes(base, source *Node) *Node {
 	return result
 }
 
-// choosePointerMapWithMoreData выбирает указатель на map с бОльшим количеством non-zero значений
+// choosePointerMapWithMoreData выбирает указатель на map с бОльшим количеством non-zero значений (рекурсивно)
 func choosePointerMapWithMoreData[T ~map[string]interface{}](base, source *T) *T {
 	if source == nil && base == nil {
 		return nil
@@ -37,22 +38,20 @@ func choosePointerMapWithMoreData[T ~map[string]interface{}](base, source *T) *T
 		return source
 	}
 
-	// Считаем non-zero values в каждом
-	sourceCount := countNonZeroValuesInMap(*source)
-	baseCount := countNonZeroValuesInMap(*base)
+	// Рекурсивно считаем non-zero values в каждом
+	sourceCount := countNonZeroValuesRecursive(*source)
+	baseCount := countNonZeroValuesRecursive(*base)
 
-	// Выбираем тот, где больше non-zero values
 	if sourceCount > baseCount {
 		return source
 	} else if baseCount > sourceCount {
 		return base
 	}
 
-	// Если количество одинаковое - приоритет у source
 	return source
 }
 
-// chooseMapWithMoreData выбирает map с бОльшим количеством non-zero значений
+// chooseMapWithMoreData выбирает map с бОльшим количеством non-zero значений (рекурсивно)
 func chooseMapWithMoreData(base, source map[string]interface{}) map[string]interface{} {
 	if source == nil && base == nil {
 		return nil
@@ -64,46 +63,52 @@ func chooseMapWithMoreData(base, source map[string]interface{}) map[string]inter
 		return source
 	}
 
-	// Считаем non-zero values в каждом
-	sourceCount := countNonZeroValuesInMap(source)
-	baseCount := countNonZeroValuesInMap(base)
+	// Рекурсивно считаем non-zero values в каждом
+	sourceCount := countNonZeroValuesRecursive(source)
+	baseCount := countNonZeroValuesRecursive(base)
 
-	// Выбираем тот, где больше non-zero values
 	if sourceCount > baseCount {
 		return source
 	} else if baseCount > sourceCount {
 		return base
 	}
 
-	// Если количество одинаковое - приоритет у source
 	return source
 }
 
-// countNonZeroValuesInMap подсчитывает количество non-zero значений в map
-func countNonZeroValuesInMap(m map[string]interface{}) int {
-	if m == nil {
+// countNonZeroValuesRecursive рекурсивно подсчитывает количество non-zero значений
+func countNonZeroValuesRecursive(data interface{}) int {
+	if data == nil {
 		return 0
 	}
 
-	count := 0
-	for _, value := range m {
-		if !isZeroValue(value) {
-			count++
+	switch v := data.(type) {
+	case map[string]interface{}:
+		count := 0
+		for _, value := range v {
+			if !isZeroValueRecursive(value) {
+				count += countNonZeroValuesRecursive(value)
+			}
 		}
+		return count
+
+	case []interface{}:
+		count := 0
+		for _, item := range v {
+			count += countNonZeroValuesRecursive(item)
+		}
+		return count
+
+	default:
+		if !isZeroValueRecursive(v) {
+			return 1
+		}
+		return 0
 	}
-	return count
 }
 
-// chooseNonEmpty выбирает непустую строку (приоритет source)
-func chooseNonEmpty(base, source string) string {
-	if source != "" {
-		return source
-	}
-	return base
-}
-
-// isZeroValue проверяет, является ли значение zero-value
-func isZeroValue(v interface{}) bool {
+// isZeroValueRecursive рекурсивно проверяет zero-value
+func isZeroValueRecursive(v interface{}) bool {
 	if v == nil {
 		return true
 	}
@@ -121,8 +126,35 @@ func isZeroValue(v interface{}) bool {
 		return !val
 	case time.Time:
 		return val.IsZero()
+	case map[string]interface{}:
+		// Рекурсивно проверяем все значения в map
+		for _, value := range val {
+			if !isZeroValueRecursive(value) {
+				return false
+			}
+		}
+		return true
+	case []interface{}:
+		// Для пустого slice считаем zero
+		return len(val) == 0
 	default:
-		// Для сложных типов считаем non-zero
-		return false
+		// Для неизвестных типов используем рефлексию
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Interface:
+			return rv.IsNil()
+		case reflect.Struct:
+			return reflect.DeepEqual(v, reflect.Zero(rv.Type()).Interface())
+		default:
+			return false
+		}
 	}
+}
+
+// chooseNonEmpty выбирает непустую строку
+func chooseNonEmpty(base, source string) string {
+	if source != "" {
+		return source
+	}
+	return base
 }
