@@ -77,18 +77,77 @@ func chooseMapWithMoreData(base, source map[string]interface{}) map[string]inter
 }
 
 // countNonZeroValuesRecursive рекурсивно подсчитывает количество non-zero значений
+// countNonZeroValuesRecursive рекурсивно подсчитывает количество non-zero значений
 func countNonZeroValuesRecursive(data interface{}) int {
 	if data == nil {
 		return 0
 	}
 
+	// Сначала проверяем специальные типы jsonapi
 	switch v := data.(type) {
+	case *RelationshipOneNode:
+		if v == nil {
+			return 0
+		}
+		count := 0
+		if v.Data != nil {
+			count += 1 + countNonZeroValuesRecursive(v.Data) // +1 за не-nil Data
+		}
+		if v.Links != nil {
+			count += countNonZeroValuesRecursive(v.Links)
+		}
+		if v.Meta != nil {
+			count += countNonZeroValuesRecursive(v.Meta)
+		}
+		return count
+
+	case *RelationshipManyNode:
+		if v == nil {
+			return 0
+		}
+		count := 0
+		if v.Data != nil && len(v.Data) > 0 {
+			count += 1 // +1 за непустой массив Data
+			for _, item := range v.Data {
+				count += countNonZeroValuesRecursive(item)
+			}
+		}
+		if v.Links != nil {
+			count += countNonZeroValuesRecursive(v.Links)
+		}
+		if v.Meta != nil {
+			count += countNonZeroValuesRecursive(v.Meta)
+		}
+		return count
+
+	case *Node:
+		if v == nil {
+			return 0
+		}
+		count := 0
+		if v.Type != "" {
+			count++
+		}
+		if v.ID != "" {
+			count++
+		}
+		if v.Lid != "" {
+			count++
+		}
+		if v.ClientID != "" {
+			count++
+		}
+		count += countNonZeroValuesRecursive(v.Attributes)
+		count += countNonZeroValuesRecursive(v.Relationships)
+		count += countNonZeroValuesRecursive(v.Links)
+		count += countNonZeroValuesRecursive(v.Meta)
+		return count
+
 	case map[string]interface{}:
 		if len(v) == 0 {
-			return 0 // Пустая map = 0 points
+			return 0
 		}
-
-		count := 1 // +1 point за сам факт непустой map
+		count := 0
 		for _, value := range v {
 			count += countNonZeroValuesRecursive(value)
 		}
@@ -96,10 +155,9 @@ func countNonZeroValuesRecursive(data interface{}) int {
 
 	case []interface{}:
 		if len(v) == 0 {
-			return 0 // Пустой slice = 0 points
+			return 0
 		}
-
-		count := 1 // +1 point за сам факт непустого slice
+		count := 0
 		for _, item := range v {
 			count += countNonZeroValuesRecursive(item)
 		}
@@ -107,7 +165,7 @@ func countNonZeroValuesRecursive(data interface{}) int {
 
 	default:
 		if !isZeroValueRecursive(v) {
-			return 1 // +1 point за non-zero значение
+			return 1
 		}
 		return 0
 	}
