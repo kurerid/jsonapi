@@ -10,13 +10,17 @@ func mergeNodes(base, source *Node) *Node {
 	result.ClientID = firstNonEmpty(source.ClientID, base.ClientID)
 
 	// Map - если source не nil и не пустой, берем source
-	if source.Attributes != nil && len(source.Attributes) > 0 {
+	if source.Attributes != nil &&
+		len(source.Attributes) > 0 &&
+		len(source.Attributes) > len(base.Attributes) {
 		result.Attributes = source.Attributes
 	} else {
 		result.Attributes = base.Attributes
 	}
 
-	if source.Relationships != nil && len(source.Relationships) > 0 {
+	if source.Relationships != nil &&
+		len(source.Relationships) > 0 &&
+		len(source.Relationships) > len(base.Relationships) {
 		result.Relationships = source.Relationships
 	} else {
 		result.Relationships = base.Relationships
