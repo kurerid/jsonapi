@@ -755,7 +755,7 @@ func appendIncluded(m *map[string]*Node, nodes ...*Node) {
 		k := fmt.Sprintf("%s,%s", n.Type, n.ID)
 
 		if existing, hasNode := included[k]; hasNode {
-			included[k] = mergeStructs(existing, n)
+			included[k] = mergeNodes(existing, n)
 			continue
 		}
 
@@ -786,47 +786,4 @@ func convertToSliceInterface(i *interface{}) ([]interface{}, error) {
 		response = append(response, vals.Index(x).Interface())
 	}
 	return response, nil
-}
-
-func mergeStructs[T any](base, overlay T) T {
-	baseVal := reflect.ValueOf(base).Elem()
-	overlayVal := reflect.ValueOf(overlay).Elem()
-
-	result := base
-
-	for i := 0; i < baseVal.NumField(); i++ {
-		field := baseVal.Field(i)
-		overlayField := overlayVal.Field(i)
-
-		if !isZeroValue(overlayField) {
-			field.Set(overlayField)
-		}
-	}
-
-	return result
-}
-
-func isZeroValue(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.String:
-		return v.String() == ""
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Struct:
-		// Особый случай для time.Time
-		if t, ok := v.Interface().(time.Time); ok {
-			return t.IsZero()
-		}
-		return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
-	case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Interface:
-		return v.IsNil()
-	default:
-		return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
-	}
 }
