@@ -5,8 +5,8 @@ import (
 )
 
 // MergeNodes объединяет две структуры Node, предпочитая non-zero значения из source
-func mergeNodes(base, source Node) Node {
-	result := Node{}
+func mergeNodes(base, source *Node) *Node {
+	result := &Node{}
 
 	// Простые строковые поля
 	result.Type = chooseNonEmpty(base.Type, source.Type)
