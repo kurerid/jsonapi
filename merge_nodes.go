@@ -5,7 +5,7 @@ import (
 )
 
 // MergeNodes объединяет две структуры Node, предпочитая non-zero значения из source
-func MergeNodes(base, source Node) Node {
+func mergeNodes(base, source Node) Node {
 	result := Node{}
 
 	// Простые строковые поля
