@@ -4,29 +4,29 @@ import (
 	"time"
 )
 
-// MergeNodes объединяет две структуры Node, предпочитая non-zero значения из source
+// MergeNodes объединяет две структуры Node, выбирая вариант с большим количеством non-zero значений
 func mergeNodes(base, source *Node) *Node {
 	result := &Node{}
 
-	// Простые строковые поля
+	// Простые строковые поля (приоритет source)
 	result.Type = chooseNonEmpty(base.Type, source.Type)
 	result.ID = chooseNonEmpty(base.ID, source.ID)
 	result.Lid = chooseNonEmpty(base.Lid, source.Lid)
 	result.ClientID = chooseNonEmpty(base.ClientID, source.ClientID)
 
-	// Map поля - выбираем ту, где есть non-zero values
-	result.Attributes = chooseNonEmptyMap(base.Attributes, source.Attributes)
-	result.Relationships = chooseNonEmptyMap(base.Relationships, source.Relationships)
+	// Map поля - выбираем тот, где больше non-zero values
+	result.Attributes = chooseMapWithMoreData(base.Attributes, source.Attributes)
+	result.Relationships = chooseMapWithMoreData(base.Relationships, source.Relationships)
 
-	// Для указателей на Links и Meta - особая логика
-	result.Links = chooseNonEmptyLinks(base.Links, source.Links)
-	result.Meta = chooseNonEmptyMeta(base.Meta, source.Meta)
+	// Для указателей на Links и Meta
+	result.Links = choosePointerMapWithMoreData(base.Links, source.Links)
+	result.Meta = choosePointerMapWithMoreData(base.Meta, source.Meta)
 
 	return result
 }
 
-// chooseNonEmptyLinks выбирает Links с non-zero values
-func chooseNonEmptyLinks(base, source *Links) *Links {
+// choosePointerMapWithMoreData выбирает указатель на map с бОльшим количеством non-zero значений
+func choosePointerMapWithMoreData[T ~map[string]interface{}](base, source *T) *T {
 	if source == nil && base == nil {
 		return nil
 	}
@@ -37,20 +37,23 @@ func chooseNonEmptyLinks(base, source *Links) *Links {
 		return source
 	}
 
-	// Оба не nil - выбираем тот, где есть данные
-	if hasNonZeroValuesInLinks(*source) {
+	// Считаем non-zero values в каждом
+	sourceCount := countNonZeroValuesInMap(*source)
+	baseCount := countNonZeroValuesInMap(*base)
+
+	// Выбираем тот, где больше non-zero values
+	if sourceCount > baseCount {
 		return source
-	}
-	if hasNonZeroValuesInLinks(*base) {
+	} else if baseCount > sourceCount {
 		return base
 	}
 
-	// Оба пустые - возвращаем source (или base)
+	// Если количество одинаковое - приоритет у source
 	return source
 }
 
-// chooseNonEmptyMeta выбирает Meta с non-zero values
-func chooseNonEmptyMeta(base, source *Meta) *Meta {
+// chooseMapWithMoreData выбирает map с бОльшим количеством non-zero значений
+func chooseMapWithMoreData(base, source map[string]interface{}) map[string]interface{} {
 	if source == nil && base == nil {
 		return nil
 	}
@@ -61,69 +64,37 @@ func chooseNonEmptyMeta(base, source *Meta) *Meta {
 		return source
 	}
 
-	// Оба не nil - выбираем тот, где есть данные
-	if hasNonZeroValuesInMeta(*source) {
+	// Считаем non-zero values в каждом
+	sourceCount := countNonZeroValuesInMap(source)
+	baseCount := countNonZeroValuesInMap(base)
+
+	// Выбираем тот, где больше non-zero values
+	if sourceCount > baseCount {
 		return source
-	}
-	if hasNonZeroValuesInMeta(*base) {
+	} else if baseCount > sourceCount {
 		return base
 	}
 
-	// Оба пустые - возвращаем source (или base)
+	// Если количество одинаковое - приоритет у source
 	return source
 }
 
-// hasNonZeroValuesInLinks проверяет, содержит ли Links хотя бы одно non-zero значение
-func hasNonZeroValuesInLinks(links Links) bool {
-	if links == nil {
-		return false
-	}
-	for _, value := range links {
-		if !isZeroValue(value) {
-			return true
-		}
-	}
-	return false
-}
-
-// hasNonZeroValuesInMeta проверяет, содержит ли Meta хотя бы одно non-zero значение
-func hasNonZeroValuesInMeta(meta Meta) bool {
-	if meta == nil {
-		return false
-	}
-	for _, value := range meta {
-		if !isZeroValue(value) {
-			return true
-		}
-	}
-	return false
-}
-
-// chooseNonEmptyMap выбирает map с non-zero values
-func chooseNonEmptyMap(base, source map[string]interface{}) map[string]interface{} {
-	if hasNonZeroValuesInMap(source) {
-		return source
-	}
-	if hasNonZeroValuesInMap(base) {
-		return base
-	}
-	return source
-}
-
-// hasNonZeroValuesInMap проверяет, содержит ли map хотя бы одно non-zero значение
-func hasNonZeroValuesInMap(m map[string]interface{}) bool {
+// countNonZeroValuesInMap подсчитывает количество non-zero значений в map
+func countNonZeroValuesInMap(m map[string]interface{}) int {
 	if m == nil {
-		return false
+		return 0
 	}
+
+	count := 0
 	for _, value := range m {
 		if !isZeroValue(value) {
-			return true
+			count++
 		}
 	}
-	return false
+	return count
 }
 
-// chooseNonEmpty выбирает непустую строку
+// chooseNonEmpty выбирает непустую строку (приоритет source)
 func chooseNonEmpty(base, source string) string {
 	if source != "" {
 		return source
@@ -151,6 +122,7 @@ func isZeroValue(v interface{}) bool {
 	case time.Time:
 		return val.IsZero()
 	default:
+		// Для сложных типов считаем non-zero
 		return false
 	}
 }
