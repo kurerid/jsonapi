@@ -77,7 +77,6 @@ func chooseMapWithMoreData(base, source map[string]interface{}) map[string]inter
 }
 
 // countNonZeroValuesRecursive рекурсивно подсчитывает количество non-zero значений
-// countNonZeroValuesRecursive рекурсивно подсчитывает количество non-zero значений
 func countNonZeroValuesRecursive(data interface{}) int {
 	if data == nil {
 		return 0
