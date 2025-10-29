@@ -790,7 +790,7 @@ func convertToSliceInterface(i *interface{}) ([]interface{}, error) {
 
 func mergeStructs[T any](base, overlay T) T {
 	baseVal := reflect.ValueOf(base).Elem()
-	overlayVal := reflect.ValueOf(overlay)
+	overlayVal := reflect.ValueOf(overlay).Elem()
 
 	result := base
 
