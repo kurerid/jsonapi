@@ -443,6 +443,13 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 		}
 		return nil
 	}
+
+	if fieldValue.Kind() == reflect.Map && fieldValue.IsNil() {
+		node.Relationships[args[1]] = &RelationshipOneNode{
+			Data: &Node{},
+		}
+		return nil
+	}
 	if omitEmpty &&
 		(isSlice && fieldValue.Len() < 1 ||
 			(!isSlice && fieldValue.IsNil())) {
