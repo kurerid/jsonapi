@@ -568,7 +568,10 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 
 func visitModelNode(model interface{}, included *map[string]*Node,
 	sideload bool) (*Node, error) {
-	node := new(Node)
+	node := &Node{
+		Attributes:    make(map[string]interface{}),
+		Relationships: make(map[string]interface{}),
+	}
 
 	var er error
 	var modelValue reflect.Value
