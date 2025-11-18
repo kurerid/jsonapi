@@ -390,6 +390,15 @@ func visitModelNodeAttribute(args []string, node *Node, fieldValue reflect.Value
 		if ok {
 			node.Attributes[args[1]] = strAttr
 		} else {
+			if fieldValue.Kind() == reflect.Slice && fieldValue.IsNil() {
+				node.Attributes[args[1]] = []interface{}{}
+				return nil
+			}
+			if fieldValue.Kind() == reflect.Map && fieldValue.IsNil() {
+				node.Attributes[args[1]] = map[string]interface{}{}
+				return nil
+			}
+
 			node.Attributes[args[1]] = fieldValue.Interface()
 		}
 	}
