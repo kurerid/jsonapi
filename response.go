@@ -437,6 +437,12 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 	}
 
 	isSlice := fieldValue.Type().Kind() == reflect.Slice
+	if fieldValue.Kind() == reflect.Slice && fieldValue.IsNil() {
+		node.Relationships[args[1]] = &RelationshipManyNode{
+			Data: []*Node{},
+		}
+		return nil
+	}
 	if omitEmpty &&
 		(isSlice && fieldValue.Len() < 1 ||
 			(!isSlice && fieldValue.IsNil())) {
