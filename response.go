@@ -445,9 +445,7 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 	}
 
 	if fieldValue.Kind() == reflect.Map && fieldValue.IsNil() {
-		node.Relationships[args[1]] = &RelationshipOneNode{
-			Data: &Node{},
-		}
+		node.Relationships[args[1]] = &RelationshipOneNode{}
 		return nil
 	}
 	if omitEmpty &&
