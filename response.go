@@ -266,7 +266,6 @@ func visitModelNodeAttribute(args []string, node *Node, fieldValue reflect.Value
 
 	if node.Attributes == nil {
 		node.Attributes = make(map[string]interface{})
-		node.Attributes[args[1]] = struct{}{}
 	}
 
 	// Handle NullableAttr[T]
@@ -569,10 +568,7 @@ func visitModelNodeRelation(model any, annotation string, args []string, node *N
 
 func visitModelNode(model interface{}, included *map[string]*Node,
 	sideload bool) (*Node, error) {
-	node := &Node{
-		Attributes:    make(map[string]interface{}),
-		Relationships: make(map[string]interface{}),
-	}
+	node := new(Node)
 
 	var er error
 	var modelValue reflect.Value
