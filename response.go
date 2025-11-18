@@ -266,6 +266,7 @@ func visitModelNodeAttribute(args []string, node *Node, fieldValue reflect.Value
 
 	if node.Attributes == nil {
 		node.Attributes = make(map[string]interface{})
+		node.Attributes[args[1]] = struct{}{}
 	}
 
 	// Handle NullableAttr[T]
