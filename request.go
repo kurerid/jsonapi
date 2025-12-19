@@ -802,6 +802,7 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 
 		t, err := time.Parse(iso8601TimeFormat, v.Interface().(string))
 		if err != nil {
+			fmt.Println(err)
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
 
