@@ -782,6 +782,8 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 	var isISO8601, isRFC3339 bool
 	v := reflect.ValueOf(attribute)
 
+	fmt.Println("value: ", v)
+
 	if len(args) > 2 {
 		for _, arg := range args[2:] {
 			if arg == annotationISO8601 {
@@ -796,15 +798,21 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 		if v.Kind() != reflect.String {
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
+		fmt.Println("v.Kind() is string")
 
 		t, err := time.Parse(iso8601TimeFormat, v.Interface().(string))
 		if err != nil {
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
 
+		fmt.Println("parsed time ", t)
+
 		if fieldValue.Kind() == reflect.Ptr {
+			fmt.Println("field value kind pointer")
 			return reflect.ValueOf(&t), nil
 		}
+
+		fmt.Println("value of t ", reflect.ValueOf(t))
 
 		return reflect.ValueOf(t), nil
 	}
