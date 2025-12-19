@@ -798,22 +798,15 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 		if v.Kind() != reflect.String {
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
-		fmt.Println("v.Kind() is string")
 
 		t, err := time.Parse(iso8601TimeFormat, v.Interface().(string))
 		if err != nil {
-			fmt.Println(err)
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
 
-		fmt.Println("parsed time ", t)
-
 		if fieldValue.Kind() == reflect.Ptr {
-			fmt.Println("field value kind pointer")
 			return reflect.ValueOf(&t), nil
 		}
-
-		fmt.Println("value of t ", reflect.ValueOf(t))
 
 		return reflect.ValueOf(t), nil
 	}
