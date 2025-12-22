@@ -995,6 +995,7 @@ func handleStructPointerSlice(
 	fieldValue reflect.Value) (reflect.Value, error) {
 
 	dataMap := reflect.ValueOf(attribute).Interface().([]interface{})
+	fmt.Println(reflect.ValueOf(attribute).Interface())
 	if len(dataMap) == 0 {
 		return reflect.MakeSlice(fieldValue.Type(), 0, 0), nil
 	}
