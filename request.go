@@ -995,6 +995,9 @@ func handleStructPointerSlice(
 	fieldValue reflect.Value) (reflect.Value, error) {
 
 	dataMap := reflect.ValueOf(attribute).Interface().([]interface{})
+	if len(dataMap) == 0 {
+		return reflect.MakeSlice(fieldValue.Type(), 0, 0), nil
+	}
 	models := reflect.New(fieldValue.Type()).Elem()
 	for _, data := range dataMap {
 		model := reflect.New(fieldValue.Type().Elem()).Elem()
