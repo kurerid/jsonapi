@@ -428,9 +428,6 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 			// continue if the attribute was not included in the request
 			if attribute == nil {
-				fmt.Println(fieldValue.Type())
-				fmt.Println(fieldValue.Type().Elem())
-				fmt.Println(reflect.New(fieldValue.Type()).Elem())
 				assign(fieldValue, reflect.New(fieldValue.Type()).Elem())
 				continue
 			}
@@ -800,8 +797,6 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 	var isISO8601, isRFC3339 bool
 	v := reflect.ValueOf(attribute)
 
-	fmt.Println("value: ", v)
-
 	if len(args) > 2 {
 		for _, arg := range args[2:] {
 			if arg == annotationISO8601 {
@@ -816,7 +811,6 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 		if v.Kind() != reflect.String {
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
-		fmt.Printf("значение = %v", v.Interface())
 
 		t, err := time.Parse(iso8601TimeFormat, v.Interface().(string))
 		if err != nil {
