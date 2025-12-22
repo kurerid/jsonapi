@@ -798,7 +798,7 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 		if v.Kind() != reflect.String {
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
-		fmt.Println(v.Interface())
+		fmt.Printf("значение = %v", v.Interface())
 
 		t, err := time.Parse(iso8601TimeFormat, v.Interface().(string))
 		if err != nil {
