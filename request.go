@@ -656,13 +656,6 @@ func assign(field, value reflect.Value) {
 // assign assigns the specified value to the field,
 // expecting both values not to be pointer types.
 func assignValue(field, value reflect.Value) {
-	if !value.IsValid() || !value.CanInterface() {
-		// Если нельзя, устанавливаем zero value
-		fmt.Println(field.Type())
-		field.Set(reflect.New(field.Type()))
-		return
-	}
-
 	switch field.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16,
 		reflect.Int32, reflect.Int64:
