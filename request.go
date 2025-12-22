@@ -659,7 +659,7 @@ func assignValue(field, value reflect.Value) {
 	if !value.IsValid() || !value.CanInterface() {
 		// Если нельзя, устанавливаем zero value
 		fmt.Println(field.Type())
-		field.Set(reflect.Zero(field.Type()))
+		field.Set(reflect.New(field.Type()))
 		return
 	}
 
