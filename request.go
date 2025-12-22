@@ -672,6 +672,13 @@ func assignValue(field, value reflect.Value) {
 		field.SetString(value.String())
 	case reflect.Bool:
 		field.SetBool(value.Bool())
+	case reflect.Ptr:
+		// Для nilable типов используем Zero
+		if value.IsZero() {
+			field.Set(reflect.Zero(field.Type()))
+		} else {
+			field.Set(value)
+		}
 	default:
 		field.Set(value)
 	}
