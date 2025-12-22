@@ -430,6 +430,7 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 			if attribute == nil {
 				if fieldValue.IsNil() {
 					fmt.Println(fieldValue.Type())
+					fmt.Println(fieldValue.Type().Elem())
 					assign(fieldValue, reflect.New(fieldValue.Type()))
 				}
 				assign(fieldValue, reflect.New(fieldValue.Type()).Elem())
