@@ -805,7 +805,7 @@ func handleTime(attribute interface{}, args []string, fieldValue reflect.Value) 
 			return reflect.ValueOf(time.Now()), ErrInvalidISO8601
 		}
 
-		if v.Interface().(string) == "" {
+		if attribute.(string) == "" {
 			return reflect.ValueOf(nil), nil
 		}
 
