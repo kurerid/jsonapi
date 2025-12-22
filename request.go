@@ -428,11 +428,9 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 
 			// continue if the attribute was not included in the request
 			if attribute == nil {
-				if fieldValue.IsNil() {
-					fmt.Println(fieldValue.Type())
-					fmt.Println(fieldValue.Type().Elem())
-					assign(fieldValue, reflect.New(fieldValue.Type()))
-				}
+				fmt.Println(fieldValue.Type())
+				fmt.Println(fieldValue.Type().Elem())
+				fmt.Println(reflect.New(fieldValue.Type()).Elem())
 				assign(fieldValue, reflect.New(fieldValue.Type()).Elem())
 				continue
 			}
