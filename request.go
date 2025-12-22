@@ -669,6 +669,8 @@ func assignValue(field, value reflect.Value) {
 		field.SetString(value.String())
 	case reflect.Bool:
 		field.SetBool(value.Bool())
+	case reflect.Value{}.Kind():
+		return
 	default:
 		field.Set(value)
 	}
