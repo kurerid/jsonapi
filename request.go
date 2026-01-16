@@ -878,7 +878,7 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 					// model, depending on annotation
 					m := reflect.New(sliceType.Elem().Elem())
 
-					err = unmarshalNodeMaybeChoice(&m, n, annotation, choiceMapping, included)
+					err = unmarshalNodeMaybeChoiceWithLidMap(&m, n, annotation, choiceMapping, included, generator, lidMap)
 					if err != nil {
 						er = err
 						break
@@ -946,7 +946,7 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 					continue
 				}
 
-				err = unmarshalNodeMaybeChoice(&m, relationship.Data, annotation, choiceMapping, included)
+				err = unmarshalNodeMaybeChoiceWithLidMap(&m, relationship.Data, annotation, choiceMapping, included, generator, lidMap)
 				if err != nil {
 					er = err
 					break
