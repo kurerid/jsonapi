@@ -914,6 +914,12 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 					er = fmt.Errorf("Could not unmarshal json: %w", relationshipDecodeErr)
 				}
 
+				if relationship.Data.Lid != "" {
+					if lidMap.Exist(relationship.Data.Lid) {
+						relationship.Data.ID = lidMap.Get(relationship.Data.Lid)
+					}
+				}
+
 				// This will hold either the value of the choice type model or the actual
 				// model, depending on annotation
 				m := reflect.New(fieldValue.Type().Elem())
