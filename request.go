@@ -1026,6 +1026,9 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 }
 
 func fullNode(n *Node, included *map[string]*Node) *Node {
+	fmt.Println("fullNode function start")
+	fmt.Println("n.ID", n.ID)
+	fmt.Println("n.LID", n.Lid)
 	if n.ID == "" && n.Lid != "" {
 		n.ID = n.Lid
 	}
