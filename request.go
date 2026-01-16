@@ -127,12 +127,7 @@ func UnmarshalPayloadWithLidMap(in io.Reader, model interface{}, generator IDGen
 		includedMap := make(map[string]*Node)
 		for _, included := range payload.Included {
 			if included.Lid != "" {
-				newId, err := generator.Generate()
-				if err != nil {
-					return nil, errors.New("failed to generate new identifier")
-				}
-				lidMap[included.Lid] = newId
-				included.ID = newId
+				included.ID = included.Lid
 			}
 			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
 			includedMap[key] = included
