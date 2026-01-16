@@ -338,6 +338,45 @@ func unmarshalNodeMaybeChoice(m *reflect.Value, data *Node, annotation string, c
 	return nil
 }
 
+func unmarshalNodeMaybeChoiceWithLidMap(m *reflect.Value, data *Node, annotation string, choiceTypeMapping map[string]structFieldIndex, included *map[string]*Node, generator IDGenerator, lidMap LidMap) error {
+	// This will hold either the value of the choice type model or the actual
+	// model, depending on annotation
+	var actualModel = *m
+	var choiceElem *structFieldIndex = nil
+
+	if annotation == annotationPolyRelation {
+		c, ok := choiceTypeMapping[data.Type]
+		if !ok {
+			// If there is no valid choice field to assign this type of relation,
+			// this shouldn't necessarily be an error because a newer version of
+			// the API could be communicating with an older version of the client
+			// library, in which case all choice variants would be nil.
+			return nil
+		}
+		choiceElem = &c
+		actualModel = reflect.New(choiceElem.Type)
+	}
+
+	if err := unmarshalNodeWithLidMap(
+		fullNode(data, included),
+		actualModel,
+		included,
+		generator,
+		lidMap,
+	); err != nil {
+		return err
+	}
+
+	if choiceElem != nil {
+		// actualModel is a pointer to the model type
+		// m is a pointer to a struct that should hold the actualModel
+		// at choiceElem.FieldNum
+		v := m.Elem()
+		v.Field(choiceElem.FieldNum).Set(actualModel)
+	}
+	return nil
+}
+
 func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -720,18 +759,14 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 				break
 			}
 
-			fmt.Println("data.ID", data.ID)
 			if data.ID == "" {
-				fmt.Println("data.Lid", data.Lid)
 				if data.Lid == "" {
 					continue
 				}
 				if lidMap.Exist(data.Lid) {
-					fmt.Println("lidMap.Exist == true")
 					id := lidMap.Get(data.Lid)
 					data.ID = id
 				} else {
-					fmt.Println("lidMap.Exist == false")
 					newId, err := generator.Generate()
 					if err != nil {
 						return fmt.Errorf(generateError)
