@@ -114,6 +114,43 @@ func UnmarshalPayload(in io.Reader, model interface{}) error {
 	return unmarshalNode(payload.Data, reflect.ValueOf(model), nil)
 }
 
+func UnmarshalPayloadWithLidMap(in io.Reader, model interface{}, generator IDGenerator) (map[string]string, error) {
+	payload := new(OnePayload)
+
+	if err := json.NewDecoder(in).Decode(payload); err != nil {
+		return nil, err
+	}
+
+	lidMap := LidMap{}
+
+	if payload.Included != nil {
+		includedMap := make(map[string]*Node)
+		for _, included := range payload.Included {
+			if included.Lid != "" {
+				newId, err := generator.Generate()
+				if err != nil {
+					return nil, errors.New("failed to generate new identifier")
+				}
+				lidMap[included.Lid] = newId
+				included.ID = newId
+			}
+			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
+			includedMap[key] = included
+		}
+
+		err := unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), &includedMap, generator, lidMap)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err := unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), nil, generator, lidMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return lidMap, nil
+}
+
 // UnmarshalManyPayload converts an io into a set of struct instances using
 // jsonapi tags on the type's struct fields.
 func UnmarshalManyPayload(in io.Reader, t reflect.Type) ([]interface{}, error) {
@@ -372,6 +409,336 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 					continue
 				}
 				data.ID = data.Lid
+			}
+
+			// ID will have to be transmitted as astring per the JSON API spec
+			v := reflect.ValueOf(data.ID)
+
+			// Deal with PTRS
+			var kind reflect.Kind
+			if fieldValue.Kind() == reflect.Ptr {
+				kind = fieldType.Type.Elem().Kind()
+			} else {
+				kind = fieldType.Type.Kind()
+			}
+
+			// Handle String case
+			if kind == reflect.String {
+				assign(fieldValue, v)
+				continue
+			}
+
+			// Value was not a string... only other supported type was a numeric,
+			// which would have been sent as a float value.
+			floatValue, err := strconv.ParseFloat(data.ID, 64)
+			if err != nil {
+				// Could not convert the value in the "id" attr to a float
+				er = ErrBadJSONAPIID
+				break
+			}
+
+			// Convert the numeric float to one of the supported ID numeric types
+			// (int[8,16,32,64] or uint[8,16,32,64])
+			idValue, err := handleNumeric(floatValue, fieldType.Type, fieldValue)
+			if err != nil {
+				// We had a JSON float (numeric), but our field was not one of the
+				// allowed numeric types
+				er = ErrBadJSONAPIID
+				break
+			}
+
+			assign(fieldValue, idValue)
+		} else if annotation == annotationClientID {
+			if data.ClientID == "" {
+				continue
+			}
+
+			fieldValue.Set(reflect.ValueOf(data.ClientID))
+		} else if annotation == annotationAttribute {
+			attributes := data.Attributes
+
+			if attributes == nil || len(data.Attributes) == 0 {
+				continue
+			}
+
+			attribute := attributes[args[1]]
+
+			// continue if the attribute was not included in the request
+			if attribute == nil {
+				fieldValue = reflect.ValueOf(nil)
+				continue
+			}
+
+			structField := fieldType
+			value, err := unmarshalAttribute(attribute, args, structField, fieldValue)
+			if err != nil {
+				er = err
+				break
+			}
+
+			assign(fieldValue, value)
+		} else if annotation == annotationRelation || annotation == annotationPolyRelation {
+			isSlice := fieldValue.Type().Kind() == reflect.Slice
+
+			// No relations of the given name were provided
+			if data.Relationships == nil || data.Relationships[args[1]] == nil {
+				continue
+			}
+
+			// If this is a polymorphic relation, each data relationship needs to be assigned
+			// to it's appropriate choice field and fieldValue should be a choice
+			// struct type field.
+			var choiceMapping map[string]structFieldIndex = nil
+			if annotation == annotationPolyRelation {
+				choiceMapping = choiceStructMapping(fieldValue.Type())
+			}
+
+			if isSlice {
+				// to-many relationship
+				relationship := new(RelationshipManyNode)
+				sliceType := fieldValue.Type()
+
+				buf := bytes.NewBuffer(nil)
+
+				json.NewEncoder(buf).Encode(data.Relationships[args[1]]) //nolint:errcheck
+				json.NewDecoder(buf).Decode(relationship)                //nolint:errcheck
+
+				data := relationship.Data
+
+				// This will hold either the value of the slice of choice type models or
+				// the slice of models, depending on the annotation
+				models := reflect.New(sliceType).Elem()
+
+				for _, n := range data {
+					// This will hold either the value of the choice type model or the actual
+					// model, depending on annotation
+					m := reflect.New(sliceType.Elem().Elem())
+
+					err = unmarshalNodeMaybeChoice(&m, n, annotation, choiceMapping, included)
+					if err != nil {
+						er = err
+						break
+					}
+
+					models = reflect.Append(models, m)
+				}
+
+				if len(data) == 0 {
+					// создаём пустой slice нужного типа, чтобы он не был nil
+					emptySlice := reflect.MakeSlice(sliceType, 0, 0)
+					fieldValue.Set(emptySlice)
+				} else {
+					fieldValue.Set(models)
+				}
+			} else {
+				// to-one relationships
+				relationship := new(RelationshipOneNode)
+
+				buf := bytes.NewBuffer(nil)
+				relDataStr := data.Relationships[args[1]]
+				json.NewEncoder(buf).Encode(relDataStr) //nolint:errcheck
+
+				isExplicitNull := false
+				relationshipDecodeErr := json.NewDecoder(buf).Decode(relationship)
+				if relationshipDecodeErr == nil && relationship.Data == nil {
+					// If the relationship was a valid node and relationship data was null
+					// this indicates disassociating the relationship
+					isExplicitNull = true
+				} else if relationshipDecodeErr != nil {
+					er = fmt.Errorf("Could not unmarshal json: %w", relationshipDecodeErr)
+				}
+
+				// This will hold either the value of the choice type model or the actual
+				// model, depending on annotation
+				m := reflect.New(fieldValue.Type().Elem())
+
+				// Nullable relationships have an extra pointer indirection
+				// unwind that here
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
+					if m.Kind() == reflect.Ptr {
+						m = reflect.New(fieldValue.Type().Elem().Elem())
+					}
+				}
+				/*
+					http://jsonapi.org/format/#document-resource-object-relationships
+					http://jsonapi.org/format/#document-resource-object-linkage
+					relationship can have a data node set to null (e.g. to disassociate the relationship)
+					so unmarshal and set fieldValue only if data obj is not null
+				*/
+				if relationship.Data == nil {
+					// Explicit null supplied for the field value
+					// If a nullable relationship we set the field value to a map with a single entry
+					if isExplicitNull && strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
+						fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+						fieldValue.SetMapIndex(reflect.ValueOf(false), m)
+					}
+					continue
+				}
+
+				// If the field is also a polyrelation field, then prefer the polyrelation.
+				// Otherwise stop processing this node.
+				// This is to allow relation and polyrelation fields to coexist, supporting deprecation for consumers
+				if pFieldType, ok := polyrelationFields[args[1]]; ok && fieldValue.Type() != pFieldType {
+					continue
+				}
+
+				err = unmarshalNodeMaybeChoice(&m, relationship.Data, annotation, choiceMapping, included)
+				if err != nil {
+					er = err
+					break
+				}
+
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableRelationship[") {
+					fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+					fieldValue.SetMapIndex(reflect.ValueOf(true), m)
+				} else {
+					fieldValue.Set(m)
+				}
+			}
+		} else if annotation == annotationLinks {
+			if data.Links == nil {
+				continue
+			}
+
+			links := make(Links, len(*data.Links))
+
+			for k, v := range *data.Links {
+				link := v // default case (including string urls)
+
+				// Unmarshal link objects to Link
+				if t, ok := v.(map[string]interface{}); ok {
+					unmarshaledHref := ""
+					href, ok := t["href"].(string)
+					if ok {
+						unmarshaledHref = href
+					}
+
+					unmarshaledMeta := make(Meta)
+					if meta, ok := t["meta"].(map[string]interface{}); ok {
+						for metaK, metaV := range meta {
+							unmarshaledMeta[metaK] = metaV
+						}
+					}
+
+					link = Link{
+						Href: unmarshaledHref,
+						Meta: unmarshaledMeta,
+					}
+				}
+
+				links[k] = link
+			}
+
+			if err != nil {
+				er = err
+				break
+			}
+
+			assign(fieldValue, reflect.ValueOf(links))
+		} else if annotation == annotationMeta {
+			if data.Meta == nil {
+				continue
+			}
+
+			links := make(Meta, len(*data.Meta))
+
+			for k, v := range *data.Meta {
+				link := v // default case (including string urls)
+				links[k] = link
+			}
+
+			if err != nil {
+				er = err
+				break
+			}
+
+			assign(fieldValue, reflect.ValueOf(links))
+		} else {
+			er = fmt.Errorf(unsupportedStructTagMsg, annotation)
+		}
+	}
+
+	return er
+}
+
+func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[string]*Node, generator IDGenerator, lidMap LidMap) (err error) {
+	if generator == nil {
+		return fmt.Errorf(notNilGeneratorError)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("data is not a jsonapi representation of '%v'", model.Type())
+		}
+	}()
+
+	modelValue := model.Elem()
+	modelType := modelValue.Type()
+	polyrelationFields := map[string]reflect.Type{}
+
+	var er error
+
+	// preprocess the model to find polyrelation fields
+	for i := 0; i < modelValue.NumField(); i++ {
+		fieldValue := modelValue.Field(i)
+		fieldType := modelType.Field(i)
+
+		args, err := getStructTags(fieldType)
+		if err != nil {
+			er = err
+			break
+		}
+
+		if len(args) < 2 {
+			continue
+		}
+
+		annotation := args[0]
+		name := args[1]
+
+		if annotation == annotationPolyRelation {
+			polyrelationFields[name] = fieldValue.Type()
+		}
+	}
+
+	for i := 0; i < modelValue.NumField(); i++ {
+		fieldValue := modelValue.Field(i)
+		fieldType := modelType.Field(i)
+
+		args, err := getStructTags(fieldType)
+		if err != nil {
+			er = err
+			break
+		}
+		if len(args) == 0 {
+			continue
+		}
+		annotation := args[0]
+
+		if annotation == annotationPrimary {
+			// Check the JSON API Type
+			if data.Type != args[1] {
+				er = fmt.Errorf(
+					"Trying to Unmarshal an object of type %#v, but %#v does not match",
+					data.Type,
+					args[1],
+				)
+				break
+			}
+
+			if data.ID == "" {
+				if data.Lid == "" {
+					continue
+				}
+				if lidMap.Exist(data.Lid) {
+					id := lidMap.Get(data.Lid)
+					data.ID = id
+				} else {
+					newId, err := generator.Generate()
+					if err != nil {
+						return fmt.Errorf(generateError)
+					}
+					lidMap.Set(data.Lid, newId)
+				}
 			}
 
 			// ID will have to be transmitted as astring per the JSON API spec
@@ -1017,4 +1384,21 @@ func handleStructPointerSlice(
 		models = reflect.Append(models, value)
 	}
 	return models, nil
+}
+
+type LidMap map[string]string
+
+func (l LidMap) Set(k, v string) {
+	if exist := l.Exist(k); !exist {
+		l[k] = v
+	}
+}
+
+func (l LidMap) Get(k string) string {
+	return l[k]
+}
+
+func (l LidMap) Exist(k string) bool {
+	_, exist := l[k]
+	return exist
 }
