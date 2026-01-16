@@ -1033,6 +1033,7 @@ func fullNode(n *Node, included *map[string]*Node) *Node {
 		n.ID = n.Lid
 	}
 	includedKey := fmt.Sprintf("%s,%s", n.Type, n.ID)
+	fmt.Println("includedKey", includedKey)
 
 	if included != nil && (*included)[includedKey] != nil {
 		return (*included)[includedKey]
