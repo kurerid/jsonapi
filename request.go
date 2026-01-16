@@ -135,17 +135,9 @@ func UnmarshalPayloadWithLidMap(in io.Reader, model interface{}, generator IDGen
 			includedMap[key] = included
 		}
 
-		err := unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), &includedMap, generator, lidMap)
-		if err != nil {
-			return nil, err
-		}
+		return lidMap, unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), &includedMap, generator, lidMap)
 	}
-	err := unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), nil, generator, lidMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return lidMap, nil
+	return lidMap, unmarshalNodeWithLidMap(payload.Data, reflect.ValueOf(model), nil, generator, lidMap)
 }
 
 // UnmarshalManyPayload converts an io into a set of struct instances using
