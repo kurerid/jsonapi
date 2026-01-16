@@ -1026,17 +1026,10 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 }
 
 func fullNode(n *Node, included *map[string]*Node) *Node {
-	fmt.Println("fullNode function start")
-	fmt.Println("n.ID", n.ID)
-	fmt.Println("n.LID", n.Lid)
 	if n.ID == "" && n.Lid != "" {
 		n.ID = n.Lid
 	}
 	includedKey := fmt.Sprintf("%s,%s", n.Type, n.ID)
-	fmt.Println("includedKey", includedKey)
-	if included != nil {
-		fmt.Println(*included)
-	}
 	if included != nil && (*included)[includedKey] != nil {
 		return (*included)[includedKey]
 	}
