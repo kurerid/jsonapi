@@ -114,40 +114,6 @@ func UnmarshalPayload(in io.Reader, model interface{}) error {
 	return unmarshalNode(payload.Data, reflect.ValueOf(model), nil)
 }
 
-func UnmarshalPayloadWithLidMap(in io.Reader, model interface{}, generator IDGenerator) (map[string]string, error) {
-	payload := new(OnePayload)
-
-	if err := json.NewDecoder(in).Decode(payload); err != nil {
-		return nil, err
-	}
-
-	lidMap := LidMap{}
-
-	if payload.Included != nil {
-		includedMap := make(map[string]*Node)
-		for _, included := range payload.Included {
-			if included.Lid != "" {
-				fmt.Println("included lid detected")
-				included.ID = included.Lid
-			}
-			key := fmt.Sprintf("%s,%s", included.Type, included.ID)
-			fmt.Println("included key:", key)
-			includedMap[key] = included
-		}
-
-		err := unmarshalNode(payload.Data, reflect.ValueOf(model), &includedMap)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err := unmarshalNode(payload.Data, reflect.ValueOf(model), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return lidMap, nil
-}
-
 // UnmarshalManyPayload converts an io into a set of struct instances using
 // jsonapi tags on the type's struct fields.
 func UnmarshalManyPayload(in io.Reader, t reflect.Type) ([]interface{}, error) {
