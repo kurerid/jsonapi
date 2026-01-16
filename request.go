@@ -868,6 +868,11 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 				models := reflect.New(sliceType).Elem()
 
 				for _, n := range data {
+					if n.Lid != "" {
+						if lidMap.Exist(n.Lid) {
+							n.ID = lidMap.Get(n.Lid)
+						}
+					}
 					// This will hold either the value of the choice type model or the actual
 					// model, depending on annotation
 					m := reflect.New(sliceType.Elem().Elem())
