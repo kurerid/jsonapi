@@ -1034,7 +1034,9 @@ func fullNode(n *Node, included *map[string]*Node) *Node {
 	}
 	includedKey := fmt.Sprintf("%s,%s", n.Type, n.ID)
 	fmt.Println("includedKey", includedKey)
-
+	if included != nil {
+		fmt.Println(*included)
+	}
 	if included != nil && (*included)[includedKey] != nil {
 		return (*included)[includedKey]
 	}
