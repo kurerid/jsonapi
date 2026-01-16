@@ -720,14 +720,18 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 				break
 			}
 
+			fmt.Println("data.ID", data.ID)
 			if data.ID == "" {
+				fmt.Println("data.Lid", data.Lid)
 				if data.Lid == "" {
 					continue
 				}
 				if lidMap.Exist(data.Lid) {
+					fmt.Println("lidMap.Exist == true")
 					id := lidMap.Get(data.Lid)
 					data.ID = id
 				} else {
+					fmt.Println("lidMap.Exist == false")
 					newId, err := generator.Generate()
 					if err != nil {
 						return fmt.Errorf(generateError)
