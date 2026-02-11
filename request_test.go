@@ -382,6 +382,39 @@ func TestUnmarshalNullableBool(t *testing.T) {
 	}
 }
 
+func TestUnmarshalNullableAttributeExplicitNullValue(t *testing.T) {
+	out := new(WithNullableAttrs)
+
+	attrs := map[string]interface{}{
+		"name": "Name",
+		"bool": nil,
+	}
+
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
+		t.Fatal(err)
+	}
+
+	if !out.Bool.IsSpecified() || !out.Bool.IsNull() {
+		t.Fatal("Expected Bool to be specified and explicit null")
+	}
+}
+
+func TestUnmarshalNullableAttributeNonExistentValue(t *testing.T) {
+	out := new(WithNullableAttrs)
+
+	attrs := map[string]interface{}{
+		"name": "Name",
+	}
+
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Bool.IsSpecified() || out.Bool.IsNull() {
+		t.Fatal("Expected Bool to NOT be specified and NOT be explicit null")
+	}
+}
+
 func TestUnmarshalNullableRelationshipsNonNullValue(t *testing.T) {
 	comment := &Comment{
 		ID:   5,
