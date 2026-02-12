@@ -489,11 +489,21 @@ func unmarshalNode(data *Node, model reflect.Value, included *map[string]*Node) 
 				continue
 			}
 
-			attribute := attributes[args[1]]
+			attribute, found := attributes[args[1]]
 
 			// continue if the attribute was not included in the request
+			if !found {
+				continue
+			}
+
+			// explicit null for NullableAttr[T] should be preserved
 			if attribute == nil {
-				fieldValue = reflect.ValueOf(nil)
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableAttr[") {
+					fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+					fieldValue.SetMapIndex(reflect.ValueOf(false), reflect.Zero(fieldValue.Type().Elem()))
+				} else if fieldValue.Kind() == reflect.Ptr {
+					fieldValue.Set(reflect.Zero(fieldValue.Type()))
+				}
 				continue
 			}
 
@@ -819,11 +829,21 @@ func unmarshalNodeWithLidMap(data *Node, model reflect.Value, included *map[stri
 				continue
 			}
 
-			attribute := attributes[args[1]]
+			attribute, found := attributes[args[1]]
 
 			// continue if the attribute was not included in the request
+			if !found {
+				continue
+			}
+
+			// explicit null for NullableAttr[T] should be preserved
 			if attribute == nil {
-				fieldValue = reflect.ValueOf(nil)
+				if strings.HasPrefix(fieldType.Type.Name(), "NullableAttr[") {
+					fieldValue.Set(reflect.MakeMapWithSize(fieldValue.Type(), 1))
+					fieldValue.SetMapIndex(reflect.ValueOf(false), reflect.Zero(fieldValue.Type().Elem()))
+				} else if fieldValue.Kind() == reflect.Ptr {
+					fieldValue.Set(reflect.Zero(fieldValue.Type()))
+				}
 				continue
 			}
 

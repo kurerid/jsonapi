@@ -2068,3 +2068,36 @@ func TestUnmarshalNestedStructPointerSlice(t *testing.T) {
 		t.Fatalf("Nested pointer struct not unmarshalled: Expected `19` but got `%d`", out.People[1].Age)
 	}
 }
+
+func TestUnmarshalNullableAttributeExplicitNull(t *testing.T) {
+	out := new(WithNullableAttrs)
+
+	attrs := map[string]interface{}{
+		"name": "Alex",
+		"bool": nil,
+	}
+
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
+		t.Fatal(err)
+	}
+
+	if !out.Bool.IsSpecified() || !out.Bool.IsNull() {
+		t.Fatalf("expected bool and null, got unspecified")
+	}
+}
+
+func TestUnmarshalNullableAttributeOmitted(t *testing.T) {
+	out := new(WithNullableAttrs)
+
+	attrs := map[string]interface{}{
+		"name": "Alex",
+	}
+
+	if err := UnmarshalPayload(samplePayloadWithNullableAttrs(attrs), out); err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Bool.IsSpecified() || out.Bool.IsNull() {
+		t.Fatalf("expected unspecified, got boolean")
+	}
+}
